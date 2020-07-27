@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale = 1.0, user-scalable = no, maximum-scale=1.0">
+  <meta charset="utf-8">
+
+  <style>
+    html,
+    body {
+      min-height: 100vh;
+    }
+
+    body {
+      padding: 12px 23px;
+    }
+
+    body > :not(:first-child) {
+      margin-top: 16px;
+    }
+
+    .A {
+      height: 100px;
+      background-color: red;
+    }
+
+    .B {
+      height: 60vh;
+      width: 25%;
+      background-color: green;
+    }
+
+    .classA {
+      background-color: blue;
+    }
+
+    .classB {
+      border: 5px solid yellow;
+    }
+
+    .classC {
+      box-shadow: 0 0 0 10px orange;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="component A"></div>
+  <div class="component B"></div>
+  <script type="module" src="example.js"></script>
+</body>
+
+</html>
