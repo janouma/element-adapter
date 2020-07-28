@@ -8,9 +8,9 @@ scrollY
 orientation
 aspectRatio
 
-predicates = {
+compiledQueries = {
   clsa: [
-    [ {width: greaterThanOrEqual(constant(100))}, {height: lesserThan(percentOfHeight(50))} ],
+    [ {width: greaterThanOrEqual(length(6.25, 'em'))}, {height: lesserThan(length(50, 'h%'))} ],
     [ {'aspect-ratio': lesserThanOrEqual(constant(16/9))} ],
     [ {width: greaterThanOrEqual(constant(680))} ]
   ],
@@ -20,33 +20,14 @@ predicates = {
   ],
 
   clsc: [
-    [ {width: greaterThan(percentOfWidth(75))} ]
+    [ {width: greaterThan(length(75, 'w%'))} ]
   ]
 }
 */
 
-const constant = x => parent => x
+const length = (x, unit) => unitsMeasurements => x * unitsMeasurements[unit]
 
-const percentOfWidth = x => parent => {
-  const { width } = parent.getBoundingClientRect()
-  const { paddingLeft, paddingRight } = getComputedStyle(parent)
-  const contentWidth = width - (parseInt(paddingLeft, 10) + parseInt(paddingRight, 10))
-
-  return (x / 100) * contentWidth
-}
-
-const percentOfHeight = x => parent => {
-  const { height } = parent.getBoundingClientRect()
-  const { paddingTop, paddingBottom } = getComputedStyle(parent)
-  const contentHeight = height - (parseInt(paddingTop, 10) + parseInt(paddingBottom, 10))
-
-  return (x / 100) * contentHeight
-}
-
-const percentCalculators = {
-  width: percentOfWidth,
-  height: percentOfHeight
-}
+const constant = x => unitsMeasurements => x
 
 const isSameType = (a, b) => {
   const aType = typeof a
@@ -59,55 +40,27 @@ const isSameType = (a, b) => {
   throw new Error(`type mismatch: a is ${aType} and b is ${bType}`)
 }
 
-const greaterThan = fnb => (parent, a) => {
-  const b = fnb(parent)
+const greaterThan = fnb => (unitsMeasurements, a) => {
+  const b = fnb(unitsMeasurements)
   return isSameType(a, b) && a > b
 }
 
-const greaterThanOrEqual = fnb => (parent, a) => {
-  const b = fnb(parent)
+const greaterThanOrEqual = fnb => (unitsMeasurements, a) => {
+  const b = fnb(unitsMeasurements)
   return isSameType(a, b) && a >= b
 }
 
-const lesserThan = fnb => (parent, a) => {
-  const b = fnb(parent)
+const lesserThan = fnb => (unitsMeasurements, a) => {
+  const b = fnb(unitsMeasurements)
   return isSameType(a, b) && a < b
 }
 
-const lesserThanOrEqual = fnb => (parent, a) => {
-  const b = fnb(parent)
+const lesserThanOrEqual = fnb => (unitsMeasurements, a) => {
+  const b = fnb(unitsMeasurements)
   return isSameType(a, b) && a <= b
 }
 
-const equal = fnb => (parent, a) => a === fnb(parent)
-
-const compileQuery = query => query.trim()
-  .toLowerCase()
-  .split(/\s*,\s*/)
-  .map(
-    booleanExpr => booleanExpr.split(/\s*&&\s*/)
-      .map(comparisonExpr => {
-        const [property, comparator, srcValue] = comparisonExpr.split(/\s+/)
-
-        const valueCalculator = srcValue.match(PERCENT_PATTERN)
-          ? percentCalculators[property](parseFloat(srcValue))
-          : constant( srcValue.match(ABS_NUMBER_PATTERN) ? parseFloat(srcValue) : srcValue )
-
-        return { [property]: comparators[comparator](valueCalculator)}
-      })
-  )
-
-const adapt = (elt, props, queries) => {
-  for (const [cls, query] of Object.entries(queries)) {
-    elt.classList.toggle(
-      cls,
-      query.some(subQuery => subQuery.every((expression) => {
-        const [[ prop, compare ]] = Object.entries(expression)
-        return compare(elt.parentNode, props[prop])
-      }))
-    )
-  }
-}
+const equal = fnb => (unitsMeasurements, a) => a === fnb(unitsMeasurements)
 
 const comparators = {
   '>': greaterThan,
@@ -117,8 +70,132 @@ const comparators = {
   '==': equal
 }
 
-const PERCENT_PATTERN = /^\d+(\.\d+)?%$/
+const LENGTH_PATTERN = /^(\d+(\.\d+)?)(%|cap|ch|em|ex|ic|lh|rem|rlh|vb|vh|vi|vw|vmin|vmax|mm|Q|cm|in|pt|pc)$/
 const ABS_NUMBER_PATTERN = /^\d+(\.\d+)?(px)?$/
+
+const percentUnitsByDimension = {
+  width: 'w%',
+  height: 'h%'
+}
+
+const dimensionsByPercentUnit = Object.entries(percentUnitsByDimension)
+  .reduce((results, [dim, unit]) => ({
+    ...results,
+    [unit]: dim
+  }), {})
+
+const compileQuery = query => {
+  const booleanExpressions = query
+    .trim()
+    .toLowerCase()
+    .split(/\s*,\s*/)
+
+  const compiledQuery = []
+  const units = []
+  const percentUnits = []
+
+  for (const booleanExpr of booleanExpressions) {
+    const comparisonExpressions = booleanExpr.split(/\s*&&\s*/)
+    const compiledBooleanExpressions = []
+
+    for (const comparisonExpr of comparisonExpressions) {
+      const [property, comparator, srcValue] = comparisonExpr.split(/\s+/)
+      const [/* whole match */, numberLiteral, /* fraction */, srcUnit] = srcValue.match(LENGTH_PATTERN) || []
+      const unit = srcUnit === '%' ? percentUnitsByDimension[property] : srcUnit
+      const number = unit && parseFloat(numberLiteral)
+      let valueCalculator
+
+      if (unit) {
+        const unitClassification = srcUnit === '%' ? percentUnits : units
+        unitClassification.push(unit)
+        valueCalculator = length(number, unit)
+      } else {
+        const parsedValue = srcValue.match(ABS_NUMBER_PATTERN) ? parseFloat(srcValue) : srcValue
+        valueCalculator = constant(parsedValue)
+      }
+
+      compiledBooleanExpressions.push({ [property]: comparators[comparator](valueCalculator) })
+    }
+
+    compiledQuery.push(compiledBooleanExpressions)
+  }
+
+  return {
+    query: compiledQuery,
+    units,
+    percentUnits
+  }
+}
+
+const compileQueryList = queries => {
+  const compiledQueries = {}
+  const units = []
+  const percentUnits = []
+
+  for (const [cssClass, query] of Object.entries(queries)) {
+    const compilationOut = compileQuery(query)
+
+    compiledQueries[cssClass] = compilationOut.query
+    units.push(...compilationOut.units)
+    percentUnits.push(...compilationOut.percentUnits)
+  }
+
+  return { compiledQueries, units, percentUnits }
+}
+
+const adapt = ({ elt, props, queries, unitsMeasurements }) => {
+  for (const [cls, query] of Object.entries(queries)) {
+    elt.classList.toggle(
+      cls,
+      query.some(subQuery => subQuery.every((expression) => {
+        const [[ prop, compare ]] = Object.entries(expression)
+        return compare(unitsMeasurements, props[prop])
+      }))
+    )
+  }
+}
+
+const mesureUnits = (elt, units, measure) => {
+  if (units.length === 0) { return }
+
+  const sample = document.createElement('b')
+  sample.style.position = 'absolute'
+  
+  elt.appendChild(sample)
+
+  const mesurments = units.reduce((mes, unit) => ({
+    ...mes,
+    [unit]: measure(sample, unit)
+  }), {})
+
+  elt.removeChild(sample)
+
+  return mesurments
+}
+
+const measureNonPercentUnits = (elt, units) => mesureUnits(
+  elt,
+  units,
+
+  (sample, unit) => {
+    sample.style.width = `1${unit}`
+    return sample.getBoundingClientRect().width
+  }
+)
+
+const measurePercentUnits = (elt, units) => mesureUnits(
+  elt.parentNode,
+  units,
+
+  (sample, unit) => {
+    const dimension = dimensionsByPercentUnit[unit]
+
+    sample.style[dimension] = '1%'
+
+    const { [dimension]: mesurement } = sample.getBoundingClientRect()
+    return mesurement
+  }
+)
 
 export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   const validationErrorMsg = 'at least one node must be provided as target'
@@ -132,13 +209,7 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   }
 
   const elements = target.length > 0 ? target : [target]
-
-  const compiledQueries = Object.entries(queries)
-    .reduce((results, [cls, query]) => ({
-      ...results,
-      [cls]: compileQuery(query)
-    }), {})
-
+  const { compiledQueries, units, percentUnits } = compileQueryList(queries)
   const propsCache = new WeakMap()
 
   const resizeObserver = new ResizeObserver(entries => {
@@ -156,10 +227,19 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
       propsCache.set(elt, props)
 
       // DEBUG
-      console.debug({elt, props})
+      // console.debug({elt, props})
       // END DEBUG
 
-      requestAnimationFrame(() => adapt(elt, props, compiledQueries))
+      requestAnimationFrame(() => adapt({
+        elt,
+        props,
+        queries: compiledQueries,
+
+        unitsMeasurements: {
+          ...measureNonPercentUnits(elt, units),
+          ...measurePercentUnits(elt, percentUnits)
+        }
+      }))
     }
   })
 
