@@ -22,12 +22,22 @@
     .A {
       height: 100px;
       background-color: red;
+      overflow: scroll;
+      box-sizing: border-box;
+      padding: 10px 20px 5px 15px ;
     }
 
     .B {
       height: 60vh;
       width: 25%;
       background-color: green;
+      display: inline-block;
+    }
+
+    .B,
+    input,
+    textarea {
+      vertical-align: top;
     }
 
     .classA {
@@ -41,13 +51,32 @@
     .classC {
       box-shadow: 0 0 0 10px orange;
     }
+
+    .classD {
+      color: yellow;
+    }
   </style>
 </head>
 
 <body>
-  <div class="component A"></div>
+  <div class="component A">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium dui ut rutrum gravida. In erat dolor, varius at congue vel, ultrices vitae diam. Vestibulum in consequat magna. Ut porta nulla condimentum, eleifend nibh ut, pellentesque ex. Quisque vel cursus purus, id gravida nulla. Ut vel libero justo. Aliquam quis lacinia erat, in commodo justo. Nullam elit nisl, porttitor venenatis cursus eget, ullamcorper id augue.
+
+    Nam congue dignissim fermentum. Pellentesque cursus feugiat nulla vitae mollis. Mauris venenatis semper elementum. Mauris ante magna, tristique vitae dolor a, pretium egestas turpis. Sed tempor purus ac ex mattis hendrerit. Phasellus aliquam diam sit amet mi congue, molestie dictum quam finibus. Etiam hendrerit lobortis augue, ut rhoncus neque accumsan vitae. Mauris vehicula nec ante vel maximus.
+    
+    Fusce ac pharetra urna. Nulla tincidunt nibh et faucibus vestibulum. Aliquam erat volutpat. In eget velit leo. Quisque facilisis placerat ornare. Nam consectetur orci congue diam sollicitudin lobortis. Morbi a dignissim felis. Curabitur eget diam sapien.
+
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus pretium dui ut rutrum gravida. In erat dolor, varius at congue vel, ultrices vitae diam. Vestibulum in consequat magna. Ut porta nulla condimentum, eleifend nibh ut, pellentesque ex. Quisque vel cursus purus, id gravida nulla. Ut vel libero justo. Aliquam quis lacinia erat, in commodo justo. Nullam elit nisl, porttitor venenatis cursus eget, ullamcorper id augue.
+
+    Nam congue dignissim fermentum. Pellentesque cursus feugiat nulla vitae mollis. Mauris venenatis semper elementum. Mauris ante magna, tristique vitae dolor a, pretium egestas turpis. Sed tempor purus ac ex mattis hendrerit. Phasellus aliquam diam sit amet mi congue, molestie dictum quam finibus. Etiam hendrerit lobortis augue, ut rhoncus neque accumsan vitae. Mauris vehicula nec ante vel maximus.
+    
+    Fusce ac pharetra urna. Nulla tincidunt nibh et faucibus vestibulum. Aliquam erat volutpat. In eget velit leo. Quisque facilisis placerat ornare. Nam consectetur orci congue diam sollicitudin lobortis. Morbi a dignissim felis. Curabitur eget diam sapien.
+  </div>
   <div class="component B"></div>
+  <input class="component" type="text" value="none" />
+  <textarea class="component">none</textarea>
   <button>stop</button>
+
   <script type="module" src="example.js"></script>
 </body>
 

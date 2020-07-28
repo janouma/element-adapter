@@ -1,26 +1,29 @@
 /*
 width
 height
-characters
-children
-scrollX
-scrollY
 orientation
 aspectRatio
+characters
+
+children
 
 compiledQueries = {
-  clsa: [
+  classA: [
     [ {width: greaterThanOrEqual(length(6.25, 'em'))}, {height: lesserThan(length(50, 'h%'))} ],
     [ {'aspect-ratio': lesserThanOrEqual(constant(16/9))} ],
     [ {width: greaterThanOrEqual(constant(680))} ]
   ],
 
-  clsb: [
+  classB: [
     [ {orientation: equal(constant('landscape'))} ]
   ],
 
-  clsc: [
+  classC: [
     [ {width: greaterThan(length(75, 'w%'))} ]
+  ],
+
+  classD: [
+    [ {characters: greaterThan(constant(10))} ]
   ]
 }
 */
@@ -143,14 +146,17 @@ const compileQueryList = queries => {
   return { compiledQueries, units, percentUnits }
 }
 
+const runQuery = ({query, unitsMeasurements, props}) => 
+  query.some(subQuery => subQuery.every((expression) => {
+    const [[ prop, compare ]] = Object.entries(expression)
+    return compare(unitsMeasurements, props[prop])
+  }))
+
 const adapt = ({ elt, props, queries, unitsMeasurements }) => {
   for (const [cls, query] of Object.entries(queries)) {
     elt.classList.toggle(
       cls,
-      query.some(subQuery => subQuery.every((expression) => {
-        const [[ prop, compare ]] = Object.entries(expression)
-        return compare(unitsMeasurements, props[prop])
-      }))
+      runQuery({query, unitsMeasurements, props})
     )
   }
 }
@@ -197,6 +203,95 @@ const measurePercentUnits = (elt, units) => mesureUnits(
   }
 )
 
+const isInputElement = elt =>
+  (elt.tagName === 'INPUT' && !['button', 'submit', 'image'].includes(elt.getAttribute('type')))
+  || elt.tagName === 'TEXTAREA'
+
+const computeInitialProps = elt => {
+  const { clientWidth, clientHeight } = elt
+  const { paddingTop, paddingRight, paddingBottom, paddingLeft } = getComputedStyle(elt)
+  const width = clientWidth - (parseInt(paddingLeft, 10) + parseInt(paddingRight, 10))
+  const height = clientHeight - (parseInt(paddingTop, 10) + parseInt(paddingBottom, 10))
+
+  return {
+    width,
+    height,
+    orientation: width > height ? 'landscape' : 'portrait',
+    'aspect-ratio': width / height,
+    characters: isInputElement(elt) ? elt.value.trim().length : 0
+  }
+}
+
+const createDimensionListener = ({
+  propsCache,
+  compiledQueries,
+  units,
+  percentUnits
+}) => entries => {
+  for (const { contentRect: { width, height }, target: elt } of entries) {
+    const cachedProps = propsCache.get(elt)
+
+    const props = {
+      ...cachedProps,
+      width,
+      height,
+      orientation: width > height ? 'landscape' : 'portrait',
+      'aspect-ratio': width / height
+    }
+
+    propsCache.set(elt, props)
+
+    // DEBUG
+    console.debug({elt, props})
+    // END DEBUG
+
+    requestAnimationFrame(() => adapt({
+      elt,
+      props,
+      queries: compiledQueries,
+
+      unitsMeasurements: {
+        ...measureNonPercentUnits(elt, units),
+        ...measurePercentUnits(elt, percentUnits)
+      }
+    }))
+  }
+}
+
+const createInputListener = ({
+  propsCache,
+  compiledQueries,
+  units,
+  percentUnits
+}) => ({ target: elt }) => {
+  const characters = elt.value.trim().length
+  const cachedProps = propsCache.get(elt)
+
+  if (characters !== cachedProps.characters) {
+    const props = {
+      ...cachedProps,
+      characters: elt.value.trim().length
+    }
+
+    // DEBUG
+    console.debug({elt, props})
+    // END DEBUG
+
+    propsCache.set(elt, props)
+
+    adapt({
+      elt,
+      props,
+      queries: compiledQueries,
+
+      unitsMeasurements: {
+        ...measureNonPercentUnits(elt, units),
+        ...measurePercentUnits(elt, percentUnits)
+      }
+    })
+  }
+}
+
 export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   const validationErrorMsg = 'at least one node must be provided as target'
 
@@ -212,44 +307,52 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   const { compiledQueries, units, percentUnits } = compileQueryList(queries)
   const propsCache = new WeakMap()
 
-  const resizeObserver = new ResizeObserver(entries => {
-    for (const { contentRect: { width, height }, target: elt } of entries) {
-      const cachedProps = propsCache.get(elt)
+  const context = {
+    propsCache,
+    compiledQueries,
+    units,
+    percentUnits
+  }
 
-      const props = {
-        ...cachedProps,
-        width,
-        height,
-        orientation: width > height ? 'landscape' : 'portrait',
-        'aspect-ratio': width / height
-      }
+  const dimensionsListener = createDimensionListener(context)
+  const resizeObserver = new ResizeObserver(dimensionsListener)
 
-      propsCache.set(elt, props)
-
-      // DEBUG
-      // console.debug({elt, props})
-      // END DEBUG
-
-      requestAnimationFrame(() => adapt({
-        elt,
-        props,
-        queries: compiledQueries,
-
-        unitsMeasurements: {
-          ...measureNonPercentUnits(elt, units),
-          ...measurePercentUnits(elt, percentUnits)
-        }
-      }))
-    }
-  })
+  const inputListener = createInputListener(context)
 
   for (const elt of elements) {
+    const props = computeInitialProps(elt)
+    propsCache.set(elt, props)
+
+    // DEBUG
+    console.debug('initial props:', {elt, props})
+    // END DEBUG
+
     resizeObserver.observe(elt)
+
+    if (isInputElement(elt)) {
+      elt.addEventListener('input', inputListener)
+    }
+
+    adapt({
+      elt,
+      props,
+      queries: compiledQueries,
+
+      unitsMeasurements: {
+        ...measureNonPercentUnits(elt, units),
+        ...measurePercentUnits(elt, percentUnits)
+      }
+    })
   }
 
   const removeAdaptiveBehaviour = () => {
     for (const e of elements) {
       resizeObserver.unobserve(e)
+
+      if (isInputElement(e)) {
+        e.removeEventListener('input', inputListener)
+      }
+
       e.classList.remove(...Object.keys(compiledQueries))
     }
   }

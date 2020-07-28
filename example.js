@@ -7,7 +7,8 @@ const removeAdaptiveBehaviour = addAdaptiveBehaviour({
     classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16/9}, width >= 680px`,
     // classA: `width >= 100px && height < 50%`,
     classB: 'orientation == landscape',
-    classC: 'width > 75%'
+    classC: 'width > 75%',
+    classD: 'characters > 10'
   }
 })
 
