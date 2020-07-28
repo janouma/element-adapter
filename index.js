@@ -83,7 +83,7 @@ const equal = fnb => (parent, a) => a === fnb(parent)
 
 const compileQuery = query => query.trim()
   .toLowerCase()
-  .split(/\s*;\s*/)
+  .split(/\s*,\s*/)
   .map(
     booleanExpr => booleanExpr.split(/\s*&&\s*/)
       .map(comparisonExpr => {
@@ -97,6 +97,18 @@ const compileQuery = query => query.trim()
       })
   )
 
+const adapt = (elt, props, queries) => {
+  for (const [cls, query] of Object.entries(queries)) {
+    elt.classList.toggle(
+      cls,
+      query.some(subQuery => subQuery.every((expression) => {
+        const [[ prop, compare ]] = Object.entries(expression)
+        return compare(elt.parentNode, props[prop])
+      }))
+    )
+  }
+}
+
 const comparators = {
   '>': greaterThan,
   '>=': greaterThanOrEqual,
@@ -108,51 +120,59 @@ const comparators = {
 const PERCENT_PATTERN = /^\d+(\.\d+)?%$/
 const ABS_NUMBER_PATTERN = /^\d+(\.\d+)?(px)?$/
 
-const adapt = (elt, props, predicates) => {
-  for (const [cls, predicate] of Object.entries(predicates)) {
-    elt.classList.toggle(
-      cls,
-      predicate.some(subPredicate => subPredicate.every((expression) => {
-        const [[ prop, compare ]] = Object.entries(expression)
-        return compare(elt.parentNode, props[prop])
-      }))
-    )
-  }
-}
+export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
+  const validationErrorMsg = 'at least one node must be provided as target'
 
-export function makeAdaptive (target, queries = {}) {
   if ('length' in target) {
     if (target.length < 1) {
-      return
+      throw new Error(validationErrorMsg)
     }
+  } else if (!target) {
+    throw new Error(validationErrorMsg)
   }
 
   const elements = target.length > 0 ? target : [target]
 
-  const predicates = Object.entries(queries)
+  const compiledQueries = Object.entries(queries)
     .reduce((results, [cls, query]) => ({
       ...results,
       [cls]: compileQuery(query)
     }), {})
 
+  const propsCache = new WeakMap()
+
   const resizeObserver = new ResizeObserver(entries => {
     for (const { contentRect: { width, height }, target: elt } of entries) {
+      const cachedProps = propsCache.get(elt)
+
       const props = {
+        ...cachedProps,
         width,
         height,
         orientation: width > height ? 'landscape' : 'portrait',
         'aspect-ratio': width / height
       }
 
+      propsCache.set(elt, props)
+
       // DEBUG
-      console.debug('props:', props)
+      console.debug({elt, props})
       // END DEBUG
 
-      requestAnimationFrame(() => adapt(elt, props, predicates))
+      requestAnimationFrame(() => adapt(elt, props, compiledQueries))
     }
   })
 
   for (const elt of elements) {
     resizeObserver.observe(elt)
   }
+
+  const removeAdaptiveBehaviour = () => {
+    for (const e of elements) {
+      resizeObserver.unobserve(e)
+      e.classList.remove(...Object.keys(compiledQueries))
+    }
+  }
+
+  return removeAdaptiveBehaviour
 }
