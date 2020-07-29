@@ -4,8 +4,11 @@ height
 orientation
 aspectRatio
 characters
+characters for editable divs
 children
 
+
+// DOC DRAFT
 compiledQueries = {
   classA: [
     [
@@ -224,6 +227,18 @@ const isInputElement = elt =>
   (elt.tagName === 'INPUT' && !['button', 'submit', 'image'].includes(elt.getAttribute('type')))
   || elt.tagName === 'TEXTAREA'
 
+const countCharacters = elt => {
+  if (isInputElement(elt)) {
+    return elt.value.trim().length
+  }
+
+  if (elt.isContentEditable) {
+    return elt.textContent.trim().length
+  }
+
+  return 0
+}
+
 const isDimension = prop => ['width', 'height'].includes(prop)
 
 const computeInitialProps = elt => {
@@ -238,10 +253,7 @@ const computeInitialProps = elt => {
     orientation: width > height ? 'landscape' : 'portrait',
     'aspect-ratio': width / height,
     children: elt.childElementCount,
-
-    characters: isInputElement(elt)
-      ? elt.value.trim().length
-      : 0
+    characters: countCharacters(elt)
   }
 }
 
@@ -289,7 +301,7 @@ const createInputListener = ({
   if (characters !== cachedProps.characters) {
     const props = {
       ...cachedProps,
-      characters: elt.value.trim().length
+      characters: countCharacters(elt)
     }
 
     propsCache.set(elt, props)
@@ -312,21 +324,35 @@ const createChildrenListener = ({
   compiledQueries,
   units,
   percentUnits,
-  elements,
-  observedMutations
+  elements
 }) => (mutations, observer) => {
   observer.disconnect()
 
-  for (const { type, target: elt } of mutations) {
-    if (type === 'childList') {
+  for (const { type, target } of mutations) {
+    const { parentElement } = target
+
+    if (parentElement && ['childList', 'characterData'].includes(type)) {
+      let elt
+
+      if (target.nodeType !== Node.TEXT_NODE) {
+        elt = target
+      } else {
+        elt = parentElement.isContentEditable ? parentElement : parentElement.closest('[contenteditable]')
+      }
+      
       const cachedProps = propsCache.get(elt)
 
       const props = {
         ...cachedProps,
-        children: elt.childElementCount
+        children: (!elt.isContentEditable && elt.childElementCount) || 0,
+        characters: countCharacters(elt)
       }
 
       propsCache.set(elt, props)
+
+      // DEBUG
+      // console.debug('props:', {elt, props})
+      // END DEBUG
 
       adapt({
         elt,
@@ -342,7 +368,94 @@ const createChildrenListener = ({
   }
 
   for (const elt of elements) {
-    observer.observe(elt, observedMutations)
+    observeMutations(observer, elt)
+  }
+}
+
+const observe = (params) => {
+  const propsCache = new WeakMap()
+  const context = { ...params, propsCache }
+
+  const {
+    elements,
+    compiledQueries,
+    units,
+    percentUnits
+  } = params
+
+  const dimensionsListener = createDimensionListener(context)
+  const resizeObserver = new ResizeObserver(dimensionsListener)
+
+  const inputListener = createInputListener(context)
+
+  const chilrenListener = createChildrenListener(context)
+  const mutationObserver = new MutationObserver(chilrenListener)
+
+  for (const elt of elements) {
+    const props = computeInitialProps(elt)
+    propsCache.set(elt, props)
+
+    // DEBUG
+    // console.debug('initial props:', {elt, props})
+    // END DEBUG
+
+    resizeObserver.observe(elt)
+
+    if (isInputElement(elt)) {
+      elt.addEventListener('input', inputListener)
+    }
+
+    observeMutations(mutationObserver, elt)
+
+    adapt({
+      elt,
+      props,
+      queries: compiledQueries,
+
+      unitsMeasurements: {
+        ...measureNonPercentUnits(elt, units),
+        ...measurePercentUnits(elt, percentUnits)
+      }
+    })
+  }
+
+  return () => unobserve({
+    elements,
+    mutationObserver,
+    resizeObserver,
+    inputListener,
+    behaviourCssClasses: Object.keys(compiledQueries)
+  })
+}
+
+const observeMutations = (observer, elt) => {
+  observer.observe(
+    elt,
+    {
+      childList: true,
+      characterData: elt.isContentEditable,
+      subtree: elt.isContentEditable
+    }
+  )
+}
+
+const unobserve = ({
+  elements,
+  mutationObserver,
+  resizeObserver,
+  inputListener,
+  behaviourCssClasses
+}) => {
+  mutationObserver.disconnect()
+
+  for (const e of elements) {
+    resizeObserver.unobserve(e)
+
+    if (isInputElement(e)) {
+      e.removeEventListener('input', inputListener)
+    }
+
+    e.classList.remove(...behaviourCssClasses)
   }
 }
 
@@ -359,67 +472,13 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
 
   const elements = target.length > 0 ? target : [target]
   const { compiledQueries, units, percentUnits } = compileQueryList(queries)
-  const propsCache = new WeakMap()
-  const observedMutations = { childList: true }
 
-  const context = {
-    propsCache,
+  const removeAdaptiveBehaviour = observe({
+    elements,
     compiledQueries,
     units,
-    percentUnits,
-    elements,
-    observedMutations
-  }
-
-  const dimensionsListener = createDimensionListener(context)
-  const resizeObserver = new ResizeObserver(dimensionsListener)
-
-  const inputListener = createInputListener(context)
-
-  const chilrenListener = createChildrenListener(context)
-  const mutationObserver = new MutationObserver(chilrenListener)
-
-  for (const elt of elements) {
-    const props = computeInitialProps(elt)
-    propsCache.set(elt, props)
-
-    // DEBUG
-    console.debug('initial props:', {elt, props})
-    // END DEBUG
-
-    resizeObserver.observe(elt)
-
-    if (isInputElement(elt)) {
-      elt.addEventListener('input', inputListener)
-    }
-
-    mutationObserver.observe(elt, observedMutations)
-
-    adapt({
-      elt,
-      props,
-      queries: compiledQueries,
-
-      unitsMeasurements: {
-        ...measureNonPercentUnits(elt, units),
-        ...measurePercentUnits(elt, percentUnits)
-      }
-    })
-  }
-
-  const removeAdaptiveBehaviour = () => {
-    mutationObserver.disconnect()
-
-    for (const e of elements) {
-      resizeObserver.unobserve(e)
-
-      if (isInputElement(e)) {
-        e.removeEventListener('input', inputListener)
-      }
-
-      e.classList.remove(...Object.keys(compiledQueries))
-    }
-  }
+    percentUnits
+  })
 
   return removeAdaptiveBehaviour
 }
