@@ -15,7 +15,7 @@
       padding: 12px 23px;
     }
 
-    body > :not(:first-child) {
+    body :not(:first-child) {
       margin-top: 16px;
     }
 
@@ -32,6 +32,16 @@
       width: 25%;
       background-color: green;
       display: inline-block;
+      box-sizing: border-box;
+      padding: 10px;
+    }
+
+    .B > :nth-child(even) {
+      background-color: tomato;
+    }
+
+    .B > :nth-child(odd) {
+      background-color: orange;
     }
 
     .B,
@@ -40,12 +50,16 @@
       vertical-align: top;
     }
 
+    input {
+      width: max(4ch, calc(var(--ea-characters, 4) * 0.8ch));
+    }
+
     .classA {
       background-color: blue;
     }
 
     .classB {
-      border: 5px solid yellow;
+      border: 5px solid limegreen;
     }
 
     .classC {
@@ -54,6 +68,10 @@
 
     .classD {
       color: yellow;
+    }
+
+    .classE {
+      background-image: linear-gradient(black, transparent);
     }
   </style>
 </head>
@@ -72,7 +90,12 @@
     
     Fusce ac pharetra urna. Nulla tincidunt nibh et faucibus vestibulum. Aliquam erat volutpat. In eget velit leo. Quisque facilisis placerat ornare. Nam consectetur orci congue diam sollicitudin lobortis. Morbi a dignissim felis. Curabitur eget diam sapien.
   </div>
-  <div class="component B"></div>
+
+  <div class="component B">
+    <div>C1</div>
+    <div>C2</div>
+  </div>
+
   <input class="component" type="text" value="none" />
   <textarea class="component">none</textarea>
   <button>stop</button>

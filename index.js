@@ -4,12 +4,15 @@ height
 orientation
 aspectRatio
 characters
-
 children
 
 compiledQueries = {
   classA: [
-    [ {width: greaterThanOrEqual(length(6.25, 'em'))}, {height: lesserThan(length(50, 'h%'))} ],
+    [
+      {width: greaterThanOrEqual(length(6.25, 'em'))},
+      {height: lesserThan(length(50, 'h%'))}
+    ],
+
     [ {'aspect-ratio': lesserThanOrEqual(constant(16/9))} ],
     [ {width: greaterThanOrEqual(constant(680))} ]
   ],
@@ -24,6 +27,13 @@ compiledQueries = {
 
   classD: [
     [ {characters: greaterThan(constant(10))} ]
+  ],
+
+  classE: [
+    [
+      {children: greaterThanOrEqual(constant(2))},
+      {children: lesserThan(constant(5))}
+    ]
   ]
 }
 */
@@ -158,6 +168,13 @@ const adapt = ({ elt, props, queries, unitsMeasurements }) => {
       cls,
       runQuery({query, unitsMeasurements, props})
     )
+
+    for (const [prop, value] of Object.entries(props)) {
+      elt.style.setProperty(
+        `--ea-${prop}`,
+        isDimension(prop) ? `${value}px` : value
+      )
+    }
   }
 }
 
@@ -207,6 +224,8 @@ const isInputElement = elt =>
   (elt.tagName === 'INPUT' && !['button', 'submit', 'image'].includes(elt.getAttribute('type')))
   || elt.tagName === 'TEXTAREA'
 
+const isDimension = prop => ['width', 'height'].includes(prop)
+
 const computeInitialProps = elt => {
   const { clientWidth, clientHeight } = elt
   const { paddingTop, paddingRight, paddingBottom, paddingLeft } = getComputedStyle(elt)
@@ -218,7 +237,11 @@ const computeInitialProps = elt => {
     height,
     orientation: width > height ? 'landscape' : 'portrait',
     'aspect-ratio': width / height,
-    characters: isInputElement(elt) ? elt.value.trim().length : 0
+    children: elt.childElementCount,
+
+    characters: isInputElement(elt)
+      ? elt.value.trim().length
+      : 0
   }
 }
 
@@ -240,10 +263,6 @@ const createDimensionListener = ({
     }
 
     propsCache.set(elt, props)
-
-    // DEBUG
-    console.debug({elt, props})
-    // END DEBUG
 
     requestAnimationFrame(() => adapt({
       elt,
@@ -273,10 +292,6 @@ const createInputListener = ({
       characters: elt.value.trim().length
     }
 
-    // DEBUG
-    console.debug({elt, props})
-    // END DEBUG
-
     propsCache.set(elt, props)
 
     adapt({
@@ -289,6 +304,45 @@ const createInputListener = ({
         ...measurePercentUnits(elt, percentUnits)
       }
     })
+  }
+}
+
+const createChildrenListener = ({
+  propsCache,
+  compiledQueries,
+  units,
+  percentUnits,
+  elements,
+  observedMutations
+}) => (mutations, observer) => {
+  observer.disconnect()
+
+  for (const { type, target: elt } of mutations) {
+    if (type === 'childList') {
+      const cachedProps = propsCache.get(elt)
+
+      const props = {
+        ...cachedProps,
+        children: elt.childElementCount
+      }
+
+      propsCache.set(elt, props)
+
+      adapt({
+        elt,
+        props,
+        queries: compiledQueries,
+  
+        unitsMeasurements: {
+          ...measureNonPercentUnits(elt, units),
+          ...measurePercentUnits(elt, percentUnits)
+        }
+      })
+    }
+  }
+
+  for (const elt of elements) {
+    observer.observe(elt, observedMutations)
   }
 }
 
@@ -306,18 +360,24 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   const elements = target.length > 0 ? target : [target]
   const { compiledQueries, units, percentUnits } = compileQueryList(queries)
   const propsCache = new WeakMap()
+  const observedMutations = { childList: true }
 
   const context = {
     propsCache,
     compiledQueries,
     units,
-    percentUnits
+    percentUnits,
+    elements,
+    observedMutations
   }
 
   const dimensionsListener = createDimensionListener(context)
   const resizeObserver = new ResizeObserver(dimensionsListener)
 
   const inputListener = createInputListener(context)
+
+  const chilrenListener = createChildrenListener(context)
+  const mutationObserver = new MutationObserver(chilrenListener)
 
   for (const elt of elements) {
     const props = computeInitialProps(elt)
@@ -333,6 +393,8 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
       elt.addEventListener('input', inputListener)
     }
 
+    mutationObserver.observe(elt, observedMutations)
+
     adapt({
       elt,
       props,
@@ -346,6 +408,8 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   }
 
   const removeAdaptiveBehaviour = () => {
+    mutationObserver.disconnect()
+
     for (const e of elements) {
       resizeObserver.unobserve(e)
 
