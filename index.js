@@ -37,6 +37,10 @@ compiledQueries = {
       {children: greaterThanOrEqual(constant(2))},
       {children: lesserThan(constant(5))}
     ]
+  ],
+
+  classF: [
+    [ {characters: equal(constant(0))} ]
   ]
 }
 */
@@ -53,8 +57,12 @@ const isSameType = (a, b) => {
     return true
   }
 
-  throw new Error(`type mismatch: a is ${aType} and b is ${bType}`)
+  throw new Error(`type mismatch: a(${a}) is ${aType} and b(${b}) is ${bType}`)
 }
+
+const dedup = array => array.length > 0
+  ? Array.from(new Set(array))
+  : array
 
 const greaterThan = fnb => (unitsMeasurements, a) => {
   const b = fnb(unitsMeasurements)
@@ -109,6 +117,7 @@ const compileQuery = query => {
   const compiledQuery = []
   const units = []
   const percentUnits = []
+  const watchedProperties = []
 
   for (const booleanExpr of booleanExpressions) {
     const comparisonExpressions = booleanExpr.split(/\s*&&\s*/)
@@ -120,6 +129,8 @@ const compileQuery = query => {
       const unit = srcUnit === '%' ? percentUnitsByDimension[property] : srcUnit
       const number = unit && parseFloat(numberLiteral)
       let valueCalculator
+
+      watchedProperties.push(property)
 
       if (unit) {
         const unitClassification = srcUnit === '%' ? percentUnits : units
@@ -139,7 +150,8 @@ const compileQuery = query => {
   return {
     query: compiledQuery,
     units,
-    percentUnits
+    percentUnits,
+    watchedProperties
   }
 }
 
@@ -147,6 +159,7 @@ const compileQueryList = queries => {
   const compiledQueries = {}
   const units = []
   const percentUnits = []
+  const watchedProperties = []
 
   for (const [cssClass, query] of Object.entries(queries)) {
     const compilationOut = compileQuery(query)
@@ -154,9 +167,15 @@ const compileQueryList = queries => {
     compiledQueries[cssClass] = compilationOut.query
     units.push(...compilationOut.units)
     percentUnits.push(...compilationOut.percentUnits)
+    watchedProperties.push(...compilationOut.watchedProperties)
   }
 
-  return { compiledQueries, units, percentUnits }
+  return {
+    compiledQueries,
+    units,
+    percentUnits,
+    watchedProperties
+  }
 }
 
 const runQuery = ({query, unitsMeasurements, props}) => 
@@ -166,18 +185,29 @@ const runQuery = ({query, unitsMeasurements, props}) =>
   }))
 
 const adapt = ({ elt, props, queries, unitsMeasurements }) => {
+  const queryProps = {
+    ...props,
+    characters: props.characters || 0,
+    children: props.children || 0
+  }
+
   for (const [cls, query] of Object.entries(queries)) {
     elt.classList.toggle(
       cls,
-      runQuery({query, unitsMeasurements, props})
-    )
 
-    for (const [prop, value] of Object.entries(props)) {
-      elt.style.setProperty(
-        `--ea-${prop}`,
-        isDimension(prop) ? `${value}px` : value
-      )
-    }
+      runQuery({
+        query,
+        unitsMeasurements,
+        props: queryProps
+      })
+    )
+  }
+
+  for (const [prop, value] of Object.entries(props)) {
+    elt.style.setProperty(
+      `--ea-${prop}`,
+      isDimension(prop) ? `${value}px` : value
+    )
   }
 }
 
@@ -239,22 +269,73 @@ const countCharacters = elt => {
   return 0
 }
 
+const isContentEditableElt = elt => elt.isContentEditable
+
+const findFirstEditableAncestor = elt => {
+  return !elt.parentElement.isContentEditable
+    ? elt
+    : findFirstEditableAncestor(elt.parentElement)
+}
+
 const isDimension = prop => ['width', 'height'].includes(prop)
 
-const computeInitialProps = elt => {
-  const { clientWidth, clientHeight } = elt
-  const { paddingTop, paddingRight, paddingBottom, paddingLeft } = getComputedStyle(elt)
-  const width = clientWidth - (parseInt(paddingLeft, 10) + parseInt(paddingRight, 10))
-  const height = clientHeight - (parseInt(paddingTop, 10) + parseInt(paddingBottom, 10))
+const areAnyEltDimensionsWatched = watchedProperties => {
+  const dimensionProps = ['width', 'height', 'orientation', 'aspect-ratio']
+  return watchedProperties.some(prop => dimensionProps.includes(prop))
+}
 
-  return {
-    width,
-    height,
-    orientation: width > height ? 'landscape' : 'portrait',
-    'aspect-ratio': width / height,
-    children: elt.childElementCount,
-    characters: countCharacters(elt)
+const areAnyEltCharactersWatched = watchedProperties => watchedProperties.includes('characters')
+
+const areContentEditableCharsWatched = (watchedProperties, elt) => (
+  areAnyEltCharactersWatched(watchedProperties) && elt.isContentEditable
+)
+
+const areAnyEltChildrenWatched = watchedProperties => watchedProperties.includes('children')
+
+const areEltChildrenWatched = (watchedProperties, elt) => (
+  areAnyEltChildrenWatched(watchedProperties)
+  || (
+    watchedProperties.includes('characters')
+    && elt.isContentEditable
+  )
+)
+
+const computeInitialProps = (elt, watchedProperties) => {
+  const props = {}
+
+  if (areAnyEltDimensionsWatched(watchedProperties)) {
+    const { clientWidth, clientHeight } = elt
+    const { paddingTop, paddingRight, paddingBottom, paddingLeft } = getComputedStyle(elt)
+    const width = clientWidth - (parseInt(paddingLeft, 10) + parseInt(paddingRight, 10))
+    const height = clientHeight - (parseInt(paddingTop, 10) + parseInt(paddingBottom, 10))
+
+    Object.assign(props, {
+      width,
+      height,
+      orientation: width > height ? 'landscape' : 'portrait',
+      'aspect-ratio': width / height
+    })
   }
+
+  if (
+    areAnyEltCharactersWatched(watchedProperties)
+    && (
+      elt.isContentEditable
+      || isInputElement(elt)
+    )
+  ) {
+    props.characters = countCharacters(elt)
+  }
+  
+  if (
+    areAnyEltChildrenWatched(watchedProperties)
+    && !elt.isContentEditable
+    && !isInputElement(elt)
+  ) {
+    props.children = elt.childElementCount
+  }
+
+  return props
 }
 
 const createDimensionListener = ({
@@ -270,7 +351,7 @@ const createDimensionListener = ({
       ...cachedProps,
       width,
       height,
-      orientation: width > height ? 'landscape' : 'portrait',
+      orientation: width > height ? 'landscape' : width < height ? 'portrait' : 'square',
       'aspect-ratio': width / height
     }
 
@@ -324,7 +405,8 @@ const createChildrenListener = ({
   compiledQueries,
   units,
   percentUnits,
-  elements
+  elements,
+  watchedProperties
 }) => (mutations, observer) => {
   observer.disconnect()
 
@@ -335,24 +417,28 @@ const createChildrenListener = ({
       let elt
 
       if (target.nodeType !== Node.TEXT_NODE) {
-        elt = target
+        elt = areContentEditableCharsWatched(watchedProperties, target)
+          ? findFirstEditableAncestor(target)
+          : target
       } else {
-        elt = parentElement.isContentEditable ? parentElement : parentElement.closest('[contenteditable]')
+        elt = findFirstEditableAncestor(parentElement)
       }
       
-      const cachedProps = propsCache.get(elt)
+      const props = { ...propsCache.get(elt) }
 
-      const props = {
-        ...cachedProps,
-        children: (!elt.isContentEditable && elt.childElementCount) || 0,
-        characters: countCharacters(elt)
+      if (
+        areAnyEltChildrenWatched(watchedProperties)
+        && !elt.isContentEditable
+        && !isInputElement(elt)
+      ) {
+        props.children = elt.childElementCount
+      }
+
+      if (areContentEditableCharsWatched(watchedProperties, elt)) {
+        props.characters = countCharacters(elt)
       }
 
       propsCache.set(elt, props)
-
-      // DEBUG
-      // console.debug('props:', {elt, props})
-      // END DEBUG
 
       adapt({
         elt,
@@ -368,7 +454,11 @@ const createChildrenListener = ({
   }
 
   for (const elt of elements) {
-    observeMutations(observer, elt)
+    observeMutations(
+      observer,
+      elt,
+      areContentEditableCharsWatched(watchedProperties, elt)
+    )
   }
 }
 
@@ -380,32 +470,38 @@ const observe = (params) => {
     elements,
     compiledQueries,
     units,
-    percentUnits
+    percentUnits,
+    watchedProperties
   } = params
 
-  const dimensionsListener = createDimensionListener(context)
-  const resizeObserver = new ResizeObserver(dimensionsListener)
+  const dimensionsListener = areAnyEltDimensionsWatched(watchedProperties) && createDimensionListener(context)
+  const resizeObserver = dimensionsListener && new ResizeObserver(dimensionsListener)
 
-  const inputListener = createInputListener(context)
+  const inputListener = areAnyEltCharactersWatched(watchedProperties) && createInputListener(context)
 
-  const chilrenListener = createChildrenListener(context)
-  const mutationObserver = new MutationObserver(chilrenListener)
+  const chilrenListener = (
+      areAnyEltChildrenWatched(watchedProperties)
+      || (areAnyEltCharactersWatched(watchedProperties) && Array.from(elements).some(isContentEditableElt))
+    )
+    && createChildrenListener(context)
+
+  const mutationObserver = chilrenListener && new MutationObserver(chilrenListener)
 
   for (const elt of elements) {
-    const props = computeInitialProps(elt)
+    const props = computeInitialProps(elt, watchedProperties)
     propsCache.set(elt, props)
 
-    // DEBUG
-    // console.debug('initial props:', {elt, props})
-    // END DEBUG
+    resizeObserver && resizeObserver.observe(elt)
 
-    resizeObserver.observe(elt)
-
-    if (isInputElement(elt)) {
+    if (inputListener && isInputElement(elt)) {
       elt.addEventListener('input', inputListener)
     }
 
-    observeMutations(mutationObserver, elt)
+    mutationObserver && observeMutations(
+      mutationObserver,
+      elt,
+      areContentEditableCharsWatched(watchedProperties, elt)
+    )
 
     adapt({
       elt,
@@ -428,13 +524,17 @@ const observe = (params) => {
   })
 }
 
-const observeMutations = (observer, elt) => {
+const observeMutations = (
+  observer,
+  elt,
+  includeCharacters = false
+) => {
   observer.observe(
     elt,
     {
       childList: true,
-      characterData: elt.isContentEditable,
-      subtree: elt.isContentEditable
+      characterData: includeCharacters,
+      subtree: includeCharacters
     }
   )
 }
@@ -446,12 +546,12 @@ const unobserve = ({
   inputListener,
   behaviourCssClasses
 }) => {
-  mutationObserver.disconnect()
+  mutationObserver && mutationObserver.disconnect()
 
   for (const e of elements) {
-    resizeObserver.unobserve(e)
+    resizeObserver && resizeObserver.unobserve(e)
 
-    if (isInputElement(e)) {
+    if (inputListener && isInputElement(e)) {
       e.removeEventListener('input', inputListener)
     }
 
@@ -459,7 +559,7 @@ const unobserve = ({
   }
 }
 
-export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
+export function addAdaptiveBehaviour ({ target, queries = {}, ...options } = {}) {
   const validationErrorMsg = 'at least one node must be provided as target'
 
   if ('length' in target) {
@@ -471,13 +571,24 @@ export function addAdaptiveBehaviour ({ target, queries = {} } = {}) {
   }
 
   const elements = target.length > 0 ? target : [target]
-  const { compiledQueries, units, percentUnits } = compileQueryList(queries)
+
+  const {
+    compiledQueries,
+    units,
+    percentUnits,
+    watchedProperties
+  } = compileQueryList(queries)
 
   const removeAdaptiveBehaviour = observe({
     elements,
     compiledQueries,
     units,
-    percentUnits
+    percentUnits,
+
+    watchedProperties: dedup([
+      ...watchedProperties,
+      ...(options.watchedProperties || [])
+    ])
   })
 
   return removeAdaptiveBehaviour

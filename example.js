@@ -5,12 +5,14 @@ const removeAdaptiveBehaviour = addAdaptiveBehaviour({
 
   queries: {
     classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16/9}, width >= 680px`,
-    // classA: `width >= 100px && height < 50%`,
     classB: 'orientation == landscape',
     classC: 'width > 75%',
     classD: 'characters > 10',
-    classE: 'children >= 2 && children < 5'
+    classE: 'children >= 2 && children < 5',
+    classF: 'characters == 0'
   }
+
+  // , watchedProperties: ['orientation']
 })
 
 document.querySelector('button')
