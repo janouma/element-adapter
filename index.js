@@ -45,6 +45,15 @@ compiledQueries = {
 }
 */
 
+const watchableProperties = [
+  'width',
+  'height',
+  'aspect-ratio',
+  'orientation',
+  'children',
+  'characters'
+]
+
 const length = (x, unit) => unitsMeasurements => x * unitsMeasurements[unit]
 
 const constant = x => unitsMeasurements => x
@@ -556,6 +565,7 @@ const unobserve = ({
     }
 
     e.classList.remove(...behaviourCssClasses)
+    watchableProperties.map(prop => e.style.removeProperty(`--ea-${prop}`))
   }
 }
 
