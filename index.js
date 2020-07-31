@@ -570,17 +570,22 @@ const unobserve = ({
 }
 
 export function addAdaptiveBehaviour ({ target, queries = {}, ...options } = {}) {
-  const validationErrorMsg = 'at least one node must be provided as target'
-
-  if ('length' in target) {
-    if (target.length < 1) {
-      throw new Error(validationErrorMsg)
-    }
-  } else if (!target) {
-    throw new Error(validationErrorMsg)
+  if (!target) {
+    throw new Error('target must be provided')
   }
 
-  const elements = target.length > 0 ? target : [target]
+  const elements = 'length' in Object(target) ? Array.from(target) : [target]
+
+  if (elements.length < 1) {
+    throw new Error('at least one Element must be provided as target')
+  }
+
+  if (elements.some(item => !(item instanceof Element))) {
+    throw new Error(`target must be an Element or a list of Elements. Actual:\n[${
+      elements.map(i => String(i))
+        .join(', ')
+    }]`)
+  }
 
   const {
     compiledQueries,
