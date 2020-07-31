@@ -54,6 +54,29 @@ const watchableProperties = [
   'characters'
 ]
 
+const cssUnitsButPx = [
+  '%', 'cap', 'ch', 'em', 'ex',
+  'ic', 'lh', 'rem', 'rlh', 'vb',
+  'vh', 'vi', 'vw', 'vmin', 'vmax',
+  'mm', 'Q', 'cm', 'in', 'pt', 'pc'
+]
+
+const INTEGER_COMPARISON_PATTERN = `(((>|<)=?)|==)\\s*\\d+`
+const FLOAT_COMPARISON_PATTERN = `${INTEGER_COMPARISON_PATTERN}(\\.\\d+)?`
+
+const DIMENSION_PROP_COMPARISON_PATTERN =
+  `(width|height)\\s*${FLOAT_COMPARISON_PATTERN}(${cssUnitsButPx.join('|')}|px)`
+
+const INTEGER_PROP_COMPARISON_PATTERN = `(characters|children)\\s*${INTEGER_COMPARISON_PATTERN}`
+const ASPECT_RATIO_COMPARISON_PATTERN = `aspect-ratio\\s*${FLOAT_COMPARISON_PATTERN}`
+const ORIENTATION_COMPARISON_PATTERN = `orientation\\s*==\\s*(landscape|portrait|square)`
+
+const COMPARISON_PATTERN =
+  `(${DIMENSION_PROP_COMPARISON_PATTERN}|${INTEGER_PROP_COMPARISON_PATTERN}|${ASPECT_RATIO_COMPARISON_PATTERN}|${ORIENTATION_COMPARISON_PATTERN})`
+
+const EXPRESSION_PATTERN = `${COMPARISON_PATTERN}(\\s+&&\\s+${COMPARISON_PATTERN})*`
+const QUERY_VALIDATOR_PATTERN = new RegExp(`^\\s*${EXPRESSION_PATTERN}(\\s*,\\s*${EXPRESSION_PATTERN})*\\s*$`)
+
 const length = (x, unit) => unitsMeasurements => x * unitsMeasurements[unit]
 
 const constant = x => unitsMeasurements => x
@@ -103,7 +126,7 @@ const comparators = {
   '==': equal
 }
 
-const LENGTH_PATTERN = /^(\d+(\.\d+)?)(%|cap|ch|em|ex|ic|lh|rem|rlh|vb|vh|vi|vw|vmin|vmax|mm|Q|cm|in|pt|pc)$/
+const LENGTH_PATTERN = new RegExp(`^(\\d+(\\.\\d+)?)(${cssUnitsButPx.join('|')})$`)
 const ABS_NUMBER_PATTERN = /^\d+(\.\d+)?(px)?$/
 
 const percentUnitsByDimension = {
@@ -585,6 +608,12 @@ export function addAdaptiveBehaviour ({ target, queries = {}, ...options } = {})
       elements.map(i => String(i))
         .join(', ')
     }]`)
+  }
+  
+  for (const query of Object.values(queries)) {
+    if (!query || !query.match(QUERY_VALIDATOR_PATTERN)) {
+      throw new Error(`invalid query "${query}"`)
+    }
   }
 
   if (
