@@ -1,50 +1,3 @@
-/*
-width
-height
-orientation
-aspectRatio
-characters
-characters for editable divs
-children
-
-
-// DOC DRAFT
-compiledQueries = {
-  classA: [
-    [
-      {width: greaterThanOrEqual(length(6.25, 'em'))},
-      {height: lesserThan(length(50, 'h%'))}
-    ],
-
-    [ {'aspect-ratio': lesserThanOrEqual(constant(16/9))} ],
-    [ {width: greaterThanOrEqual(constant(680))} ]
-  ],
-
-  classB: [
-    [ {orientation: equal(constant('landscape'))} ]
-  ],
-
-  classC: [
-    [ {width: greaterThan(length(75, 'w%'))} ]
-  ],
-
-  classD: [
-    [ {characters: greaterThan(constant(10))} ]
-  ],
-
-  classE: [
-    [
-      {children: greaterThanOrEqual(constant(2))},
-      {children: lesserThan(constant(5))}
-    ]
-  ],
-
-  classF: [
-    [ {characters: equal(constant(0))} ]
-  ]
-}
-*/
-
 const watchableProperties = [
   'width',
   'height',
@@ -61,7 +14,7 @@ const cssUnitsButPx = [
   'mm', 'Q', 'cm', 'in', 'pt', 'pc'
 ]
 
-const INTEGER_COMPARISON_PATTERN = `(((>|<)=?)|==)\\s*\\d+`
+const INTEGER_COMPARISON_PATTERN = '(((>|<)=?)|==)\\s*\\d+'
 const FLOAT_COMPARISON_PATTERN = `${INTEGER_COMPARISON_PATTERN}(\\.\\d+)?`
 
 const DIMENSION_PROP_COMPARISON_PATTERN =
@@ -69,7 +22,7 @@ const DIMENSION_PROP_COMPARISON_PATTERN =
 
 const INTEGER_PROP_COMPARISON_PATTERN = `(characters|children)\\s*${INTEGER_COMPARISON_PATTERN}`
 const ASPECT_RATIO_COMPARISON_PATTERN = `aspect-ratio\\s*${FLOAT_COMPARISON_PATTERN}`
-const ORIENTATION_COMPARISON_PATTERN = `orientation\\s*==\\s*(landscape|portrait|square)`
+const ORIENTATION_COMPARISON_PATTERN = 'orientation\\s*==\\s*(landscape|portrait|square)'
 
 const COMPARISON_PATTERN =
   `(${DIMENSION_PROP_COMPARISON_PATTERN}|${INTEGER_PROP_COMPARISON_PATTERN}|${ASPECT_RATIO_COMPARISON_PATTERN}|${ORIENTATION_COMPARISON_PATTERN})`
@@ -210,9 +163,9 @@ const compileQueryList = queries => {
   }
 }
 
-const runQuery = ({query, unitsMeasurements, props}) => 
+const runQuery = ({ query, unitsMeasurements, props }) =>
   query.some(subQuery => subQuery.every((expression) => {
-    const [[ prop, compare ]] = Object.entries(expression)
+    const [[prop, compare]] = Object.entries(expression)
     return compare(unitsMeasurements, props[prop])
   }))
 
@@ -248,7 +201,7 @@ const mesureUnits = (elt, units, measure) => {
 
   const sample = document.createElement('b')
   sample.style.position = 'absolute'
-  
+
   elt.appendChild(sample)
 
   const mesurments = units.reduce((mes, unit) => ({
@@ -286,8 +239,8 @@ const measurePercentUnits = (elt, units) => mesureUnits(
 )
 
 const isInputElement = elt =>
-  (elt.tagName === 'INPUT' && !['button', 'submit', 'image'].includes(elt.getAttribute('type')))
-  || elt.tagName === 'TEXTAREA'
+  (elt.tagName === 'INPUT' && !['button', 'submit', 'image'].includes(elt.getAttribute('type'))) ||
+  elt.tagName === 'TEXTAREA'
 
 const countCharacters = elt => {
   if (isInputElement(elt)) {
@@ -324,20 +277,12 @@ const areContentEditableCharsWatched = (watchedProperties, elt) => (
 
 const areAnyEltChildrenWatched = watchedProperties => watchedProperties.includes('children')
 
-const areEltChildrenWatched = (watchedProperties, elt) => (
-  areAnyEltChildrenWatched(watchedProperties)
-  || (
-    watchedProperties.includes('characters')
-    && elt.isContentEditable
-  )
-)
-
 const computeInitialProps = (elt, watchedProperties) => {
   const props = {}
 
   if (areAnyEltDimensionsWatched(watchedProperties)) {
     const { clientWidth, clientHeight } = elt
-    const { paddingTop, paddingRight, paddingBottom, paddingLeft } = getComputedStyle(elt)
+    const { paddingTop, paddingRight, paddingBottom, paddingLeft } = window.getComputedStyle(elt)
     const width = clientWidth - (parseInt(paddingLeft, 10) + parseInt(paddingRight, 10))
     const height = clientHeight - (parseInt(paddingTop, 10) + parseInt(paddingBottom, 10))
 
@@ -350,19 +295,19 @@ const computeInitialProps = (elt, watchedProperties) => {
   }
 
   if (
-    areAnyEltCharactersWatched(watchedProperties)
-    && (
-      elt.isContentEditable
-      || isInputElement(elt)
+    areAnyEltCharactersWatched(watchedProperties) &&
+    (
+      elt.isContentEditable ||
+      isInputElement(elt)
     )
   ) {
     props.characters = countCharacters(elt)
   }
-  
+
   if (
-    areAnyEltChildrenWatched(watchedProperties)
-    && !elt.isContentEditable
-    && !isInputElement(elt)
+    areAnyEltChildrenWatched(watchedProperties) &&
+    !elt.isContentEditable &&
+    !isInputElement(elt)
   ) {
     props.children = elt.childElementCount
   }
@@ -389,7 +334,7 @@ const createDimensionListener = ({
 
     propsCache.set(elt, props)
 
-    requestAnimationFrame(() => adapt({
+    window.requestAnimationFrame(() => adapt({
       elt,
       props,
       queries: compiledQueries,
@@ -448,20 +393,20 @@ const createChildrenListener = ({
     if (parentElement && ['childList', 'characterData'].includes(type)) {
       let elt
 
-      if (target.nodeType !== Node.TEXT_NODE) {
+      if (target.nodeType !== window.Node.TEXT_NODE) {
         elt = areContentEditableCharsWatched(watchedProperties, target)
           ? findFirstEditableAncestor(target)
           : target
       } else {
         elt = findFirstEditableAncestor(parentElement)
       }
-      
+
       const props = { ...propsCache.get(elt) }
 
       if (
-        areAnyEltChildrenWatched(watchedProperties)
-        && !elt.isContentEditable
-        && !isInputElement(elt)
+        areAnyEltChildrenWatched(watchedProperties) &&
+        !elt.isContentEditable &&
+        !isInputElement(elt)
       ) {
         props.children = elt.childElementCount
       }
@@ -476,7 +421,7 @@ const createChildrenListener = ({
         elt,
         props,
         queries: compiledQueries,
-  
+
         unitsMeasurements: {
           ...measureNonPercentUnits(elt, units),
           ...measurePercentUnits(elt, percentUnits)
@@ -495,6 +440,7 @@ const createChildrenListener = ({
 }
 
 const observe = (params) => {
+  const { ResizeObserver, MutationObserver } = window
   const propsCache = new WeakMap()
   const context = { ...params, propsCache }
 
@@ -512,10 +458,10 @@ const observe = (params) => {
   const inputListener = areAnyEltCharactersWatched(watchedProperties) && createInputListener(context)
 
   const chilrenListener = (
-      areAnyEltChildrenWatched(watchedProperties)
-      || (areAnyEltCharactersWatched(watchedProperties) && Array.from(elements).some(isContentEditableElt))
-    )
-    && createChildrenListener(context)
+    areAnyEltChildrenWatched(watchedProperties) ||
+    (areAnyEltCharactersWatched(watchedProperties) && Array.from(elements).some(isContentEditableElt))
+  ) &&
+    createChildrenListener(context)
 
   const mutationObserver = chilrenListener && new MutationObserver(chilrenListener)
 
@@ -603,13 +549,13 @@ export function addAdaptiveBehaviour ({ target, queries = {}, ...options } = {})
     throw new Error('at least one Element must be provided as target')
   }
 
-  if (elements.some(item => !(item instanceof Element))) {
+  if (elements.some(item => !(item instanceof window.Element))) {
     throw new Error(`target must be an Element or a list of Elements. Actual:\n[${
       elements.map(i => String(i))
         .join(', ')
     }]`)
   }
-  
+
   for (const query of Object.values(queries)) {
     if (!query || !query.match(QUERY_VALIDATOR_PATTERN)) {
       throw new Error(`invalid query "${query}"`)
@@ -617,11 +563,11 @@ export function addAdaptiveBehaviour ({ target, queries = {}, ...options } = {})
   }
 
   if (
-    options.watchedProperties
-    && (
-      !Array.isArray(options.watchedProperties)
-      || options.watchedProperties.length < 1
-      || !options.watchedProperties.every(prop => watchableProperties.includes(prop))
+    options.watchedProperties &&
+    (
+      !Array.isArray(options.watchedProperties) ||
+      options.watchedProperties.length < 1 ||
+      !options.watchedProperties.every(prop => watchableProperties.includes(prop))
     )
   ) {
     throw new Error(`watchedProperties must be an array with at least one of ${watchableProperties.join(', ')}`)

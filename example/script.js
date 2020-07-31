@@ -1,4 +1,4 @@
-import { addAdaptiveBehaviour } from './index.js'
+import { addAdaptiveBehaviour } from '../src/index.js'
 
 const removeAdaptiveBehaviour = addAdaptiveBehaviour({
   target: document.querySelectorAll('.component'),

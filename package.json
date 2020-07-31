@@ -2,10 +2,6 @@
   "name": "element-adapter",
   "version": "1.0.0",
   "description": "Provides utilities to render dom element adatptive (responsive) to their own properties – dimensions for instance. Can be used with shadow dom",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [
     "responsive",
     "adaptive",
@@ -13,5 +9,24 @@
     "container queries"
   ],
   "author": "janouma",
-  "license": "ISC"
+  "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.js\" \"test/**/*.js\""
+  },
+  "pre-commit": [
+    "lint"
+  ],
+  "eslintConfig": {
+    "extends": [
+      "standard"
+    ]
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-standard": "^4.0.1",
+    "pre-commit": "^1.2.2",
+    "standard": "^14.3.3"
+  }
 }
