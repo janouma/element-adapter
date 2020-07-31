@@ -587,6 +587,17 @@ export function addAdaptiveBehaviour ({ target, queries = {}, ...options } = {})
     }]`)
   }
 
+  if (
+    options.watchedProperties
+    && (
+      !Array.isArray(options.watchedProperties)
+      || options.watchedProperties.length < 1
+      || !options.watchedProperties.every(prop => watchableProperties.includes(prop))
+    )
+  ) {
+    throw new Error(`watchedProperties must be an array with at least one of ${watchableProperties.join(', ')}`)
+  }
+
   const {
     compiledQueries,
     units,
