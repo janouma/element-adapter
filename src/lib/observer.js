@@ -37,8 +37,8 @@ const adapt = ({ elt, props, queries, unitsMeasurements }) => {
 }
 
 const areAnyEltDimensionsWatched = watchedProperties => {
-  const dimensionProps = ['width', 'height', 'orientation', 'aspect-ratio']
-  return watchedProperties.some(prop => dimensionProps.includes(prop))
+  const dimensionRelatedProps = ['width', 'height', 'orientation', 'aspect-ratio']
+  return watchedProperties.some(prop => dimensionRelatedProps.includes(prop))
 }
 
 const areAnyEltCharactersWatched = watchedProperties => watchedProperties.includes('characters')
