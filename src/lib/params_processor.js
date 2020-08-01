@@ -21,15 +21,15 @@ export const parseTarget = target => {
   return elements
 }
 
-const INTEGER_COMPARISON_PATTERN = '(((>|<)=?)|==)\\s*\\d+'
+const INTEGER_COMPARISON_PATTERN = '(((>|<)=?)|==)\\s+\\d+'
 const FLOAT_COMPARISON_PATTERN = `${INTEGER_COMPARISON_PATTERN}(\\.\\d+)?`
 
 const DIMENSION_PROP_COMPARISON_PATTERN =
-  `(width|height)\\s*${FLOAT_COMPARISON_PATTERN}(${CSS_UNITS_BUT_PX.join('|')}|px)`
+  `(width|height)\\s+${FLOAT_COMPARISON_PATTERN}(${CSS_UNITS_BUT_PX.join('|')}|px)`
 
-const INTEGER_PROP_COMPARISON_PATTERN = `(characters|children)\\s*${INTEGER_COMPARISON_PATTERN}`
-const ASPECT_RATIO_COMPARISON_PATTERN = `aspect-ratio\\s*${FLOAT_COMPARISON_PATTERN}`
-const ORIENTATION_COMPARISON_PATTERN = 'orientation\\s*==\\s*(landscape|portrait|square)'
+const INTEGER_PROP_COMPARISON_PATTERN = `(characters|children)\\s+${INTEGER_COMPARISON_PATTERN}`
+const ASPECT_RATIO_COMPARISON_PATTERN = `aspect-ratio\\s+${FLOAT_COMPARISON_PATTERN}`
+const ORIENTATION_COMPARISON_PATTERN = 'orientation\\s+==\\s+(landscape|portrait|square)'
 
 const COMPARISON_PATTERN =
   `(${DIMENSION_PROP_COMPARISON_PATTERN}|${INTEGER_PROP_COMPARISON_PATTERN}|${ASPECT_RATIO_COMPARISON_PATTERN}|${ORIENTATION_COMPARISON_PATTERN})`
