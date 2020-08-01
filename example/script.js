@@ -1,10 +1,10 @@
-import { addAdaptiveBehaviour } from '../src/index.js'
+import addAdaptiveBehaviour from '../dist/element-adapter.js'
 
 const removeAdaptiveBehaviour = addAdaptiveBehaviour({
   target: document.querySelectorAll('.component'),
 
   queries: {
-    classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16/9}, width >= 680px`,
+    classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`,
     classB: 'orientation == landscape',
     classC: 'width > 75%',
     classD: 'characters > 10',

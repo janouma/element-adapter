@@ -10,10 +10,20 @@
   ],
   "author": "janouma",
   "license": "ISC",
-  "main": "index.js",
+  "source": "src/index.js",
+  "module": "dist/element-adapter.esm.js",
   "scripts": {
-    "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.js\" \"test/**/*.js\""
+    "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.js\" \"test/**/*.js\"",
+    "build": "microbundle --no-pkg-main -f module",
+    "dev": "npm run build -- watch",
+    "build:prod": "npm run build -- -o dist/$npm_package_name.esm.js --no-sourcemap"
   },
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "not IE_Mob 11",
+    "maintained node versions"
+  ],
   "pre-commit": [
     "lint"
   ],
@@ -26,6 +36,7 @@
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-standard": "^4.0.1",
+    "microbundle": "^0.12.3",
     "pre-commit": "^1.2.2",
     "standard": "^14.3.3"
   }
