@@ -52,3 +52,8 @@ export const measurePercentUnits = (elt, units) => mesureUnits(
 )
 
 export const isDimension = prop => ['width', 'height'].includes(prop)
+
+export const computeOrientation =
+  (width, height) => width > height ? 'landscape' : width < height ? 'portrait' : 'square'
+
+export const computeRatio = (width, height) => width / height

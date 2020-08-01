@@ -1,4 +1,11 @@
-import { measureNonPercentUnits, measurePercentUnits, isDimension } from '../utils/dimensions'
+import {
+  measureNonPercentUnits,
+  measurePercentUnits,
+  isDimension,
+  computeOrientation,
+  computeRatio
+} from '../utils/dimensions'
+
 import { runQuery } from './query_processor'
 import { WATCHABLE_PROPERTIES } from './constants'
 
@@ -61,8 +68,8 @@ const computeInitialProps = (elt, watchedProperties) => {
     Object.assign(props, {
       width,
       height,
-      orientation: width > height ? 'landscape' : 'portrait',
-      'aspect-ratio': width / height
+      orientation: computeOrientation(width, height),
+      'aspect-ratio': computeRatio(width, height)
     })
   }
 
@@ -100,8 +107,8 @@ const createDimensionListener = ({
       ...cachedProps,
       width,
       height,
-      orientation: width > height ? 'landscape' : width < height ? 'portrait' : 'square',
-      'aspect-ratio': width / height
+      orientation: computeOrientation(width, height),
+      'aspect-ratio': computeRatio(width, height)
     }
 
     propsCache.set(elt, props)
