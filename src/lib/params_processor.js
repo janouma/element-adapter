@@ -5,7 +5,7 @@ export const parseTarget = target => {
     throw new Error('target must be provided')
   }
 
-  const elements = 'length' in Object(target) ? Array.from(target) : [target]
+  const elements = 'length' in Object(target) ? (Array.isArray(target) ? target : Array.from(target)) : [target]
 
   if (elements.length < 1) {
     throw new Error('at least one Element must be provided as target')
