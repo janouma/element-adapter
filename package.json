@@ -42,12 +42,11 @@
     ]
   },
   "devDependencies": {
+    "babel-jest": "^25.2.6",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-standard": "^4.0.1",
     "jest": "^25.2.7",
-    "babel-jest": "^25.2.6",
-    "@babel/plugin-transform-runtime": "^7.9.0",
     "microbundle": "^0.12.3",
     "pre-commit": "^1.2.2",
     "pre-push": "^0.1.1",
