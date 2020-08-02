@@ -2,6 +2,7 @@ import { length, constant } from './calculators'
 import comparators from './comparators'
 import { percentUnitsByDimension } from '../utils/dimensions'
 import { CSS_UNITS_BUT_PX } from './constants'
+import { dedup } from '../utils/array'
 
 const LENGTH_PATTERN = new RegExp(`^(\\d+(\\.\\d+)?)(${CSS_UNITS_BUT_PX.join('|')})$`)
 const ABS_NUMBER_PATTERN = /^\d+(\.\d+)?(px)?$/
@@ -76,8 +77,8 @@ export const compileQueryList = queries => {
 
   return {
     compiledQueries,
-    units,
-    percentUnits,
-    watchedProperties
+    units: dedup(units),
+    percentUnits: dedup(percentUnits),
+    watchedProperties: dedup(watchedProperties)
   }
 }
