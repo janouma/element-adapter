@@ -73,4 +73,14 @@ describe('index', () => {
     addAdaptiveBehaviour()
     expect(validateQueries).toHaveBeenCalledWith(expect.any(Object))
   })
+
+  it('should throw when neither "queries" nor "options.watchedProperties" is provided', () => {
+    compileQueryList.mockImplementationOnce(() => ({
+      ...compiled,
+      watchedProperties: []
+    }))
+
+    expect(() => addAdaptiveBehaviour())
+      .toThrow('at least one query or one watched properties must be provided')
+  })
 })

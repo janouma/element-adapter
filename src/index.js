@@ -16,6 +16,10 @@ export default function addAdaptiveBehaviour ({ target, queries = {}, ...options
     watchedProperties
   } = compileQueryList(queries)
 
+  if (watchedProperties.length < 1 && !options.watchedProperties) {
+    throw new Error('at least one query or one watched properties must be provided')
+  }
+
   const removeAdaptiveBehaviour = observe({
     elements,
     compiledQueries,
