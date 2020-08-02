@@ -1,6 +1,7 @@
 /* eslint-env jest */
 
-import { parseTarget } from '../../src/lib/params_processor'
+import { parseTarget, validateOptions } from '../../src/lib/params_processor'
+import { WATCHABLE_PROPERTIES } from '../../src/lib/constants'
 
 describe('lib/params_processor', () => {
   describe('#parseTarget', () => {
@@ -71,6 +72,30 @@ describe('lib/params_processor', () => {
 
       expect(elements).toHaveLength(1)
       expect(elements[0]).toBe(element)
+    })
+  })
+
+  describe('#validateOptions', () => {
+    it('should accept empty object', () => {
+      expect(() => validateOptions({ watchedProperties: null })).not.toThrow()
+    })
+
+    it('should accept all watchable properties', () => {
+      expect(() => validateOptions({ watchedProperties: WATCHABLE_PROPERTIES })).not.toThrow()
+    })
+
+    it('should reject any property missing from watchable ones', () => {
+      expect(() => validateOptions({ watchedProperties: ['width', 'client-width'] }))
+        .toThrow(`watchedProperties must be an array with at least one of ${WATCHABLE_PROPERTIES.join(', ')}`)
+    })
+
+    it('should reject  an empty array as "watchedProperties"', () => {
+      expect(() => validateOptions({ watchedProperties: [] }))
+        .toThrow(`watchedProperties must be an array with at least one of ${WATCHABLE_PROPERTIES.join(', ')}`)
+    })
+
+    it('should reject "watchedProperties" which is not an array', () => {
+      expect(() => validateOptions({ watchedProperties: {} })).toThrow('watchedProperties must be an array')
     })
   })
 })

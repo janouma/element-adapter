@@ -46,14 +46,13 @@ export const validateQueries = queries => {
 }
 
 export const validateOptions = ({ watchedProperties }) => {
-  if (
-    watchedProperties &&
-    (
-      !Array.isArray(watchedProperties) ||
-      watchedProperties.length < 1 ||
-      !watchedProperties.every(prop => WATCHABLE_PROPERTIES.includes(prop))
-    )
-  ) {
-    throw new Error(`watchedProperties must be an array with at least one of ${WATCHABLE_PROPERTIES.join(', ')}`)
+  if (watchedProperties) {
+    if (!Array.isArray(watchedProperties)) {
+      throw new Error('watchedProperties must be an array')
+    }
+
+    if (watchedProperties.length < 1 || !watchedProperties.every(prop => WATCHABLE_PROPERTIES.includes(prop))) {
+      throw new Error(`watchedProperties must be an array with at least one of ${WATCHABLE_PROPERTIES.join(', ')}`)
+    }
   }
 }
