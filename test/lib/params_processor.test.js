@@ -1,6 +1,6 @@
 /* eslint-env jest */
 
-import { parseTarget, validateOptions } from '../../src/lib/params_processor'
+import { parseTarget, validateOptions, validateQueries } from '../../src/lib/params_processor'
 import { WATCHABLE_PROPERTIES } from '../../src/lib/constants'
 
 describe('lib/params_processor', () => {
@@ -96,6 +96,56 @@ describe('lib/params_processor', () => {
 
     it('should reject "watchedProperties" which is not an array', () => {
       expect(() => validateOptions({ watchedProperties: {} })).toThrow('watchedProperties must be an array')
+    })
+  })
+
+  describe('#validateQueries', () => {
+    it('should accept valid queries', () => {
+      expect(() => validateQueries({
+        classA: `width   >=    6.25em  &&   height  <  50%, aspect-ratio <= ${16 / 9}, width   >= 680px`,
+        classB: '   orientation   ==  landscape  ',
+        classC: '  width > 75%',
+        classD: 'characters  > 10',
+        classE: 'children >=  2 && children < 5  ',
+        classF: 'characters   == 0',
+        classG: 'width >= 75em,height >=  80%',
+        classH: 'orientation == portrait',
+        classI: 'orientation == square'
+      })).not.toThrow()
+    })
+
+    it.each`
+      case                                                    | query
+
+      ${'query which is empty'}                               | ${''}
+      ${'query which is blank'}                               | ${' '}
+      ${'query having unknown property'}                      | ${'client-width >= 45px'}
+      ${'query comparing length to unitless value'}           | ${'width >= 45.5'}
+      ${'query comparing length to unkown unit value'}        | ${'width >= 33.3po'}
+      ${'query comparing aspect-ratio to length'}             | ${'aspect-ratio >= 33.3ch'}
+      ${'query comparing characters to length'}               | ${'characters >= 33ch'}
+      ${'query comparing characters to float'}                | ${'characters >= 33.3'}
+      ${'query comparing children to length'}                 | ${'children >= 33ch'}
+      ${'query comparing children to float'}                  | ${'children >= 33.5'}
+      ${'query comparing orientation to unknown value'}       | ${'orientation == 33.5'}
+      ${'query comparing orientation with greater'}           | ${'orientation > landscape'}
+      ${'query comparing orientation with greater or equal'}  | ${'orientation >= landscape'}
+      ${'query comparing orientation with lesser'}            | ${'orientation < landscape'}
+      ${'query comparing orientation with lesser or equal'}   | ${'orientation <= landscape'}
+      ${'query having unknown comparison sign'}               | ${'width ~ 33.3em'}
+      ${'query without space before comparator'}              | ${'width> 33.3em'}
+      ${'query without space after comparator'}               | ${'width >33.3em'}
+      ${'query without boolean operator'}                     | ${'width >= 45rem height < 33%'}
+      ${'query without space before boolean operator'}        | ${'width >= 45rem&& height < 33%'}
+      ${'query without space after boolean operator'}         | ${'width >= 45rem &&height < 33%'}
+      ${'query having unknown boolean operator'}              | ${'width >= 45rem ^ height < 33%'}
+      ${'query without expression separator'}                 | ${'width >= 45rem && height < 33% children <= 2'}
+      ${'query having unknown expression separator'}          | ${'width >= 45rem && height < 33% | children <= 2'}
+    `('should reject $case', ({ query }) => {
+      expect(() => validateQueries({
+        classA: query,
+        classB: 'width > 75%'
+      })).toThrow(`invalid query "${query}"`)
     })
   })
 })
