@@ -11,7 +11,7 @@ const {
 } = comparators
 
 const computed = 8
-const unitsMeasurements = { toString: () => window.performance.now() }
+const unitsMeasurements = { em: 16 }
 const calculator = jest.fn(() => computed).mockName('calculator')
 const calculatorFactory = () => calculator
 
