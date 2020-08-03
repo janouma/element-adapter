@@ -29,7 +29,10 @@ const lesserThanOrEqual = fnb => (unitsMeasurements, a) => {
   return isSameType(a, b) && a <= b
 }
 
-const equal = fnb => (unitsMeasurements, a) => a === fnb(unitsMeasurements)
+const equal = fnb => (unitsMeasurements, a) => {
+  const b = fnb(unitsMeasurements)
+  return isSameType(a, b) && a === fnb(unitsMeasurements)
+}
 
 export default {
   '>': greaterThan,
