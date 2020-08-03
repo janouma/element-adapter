@@ -21,3 +21,18 @@ export const findFirstEditableAncestor = elt => {
     ? elt
     : findFirstEditableAncestor(elt.parentElement)
 }
+
+export const observeMutations = (
+  observer,
+  elt,
+  includeCharacters = false
+) => {
+  observer.observe(
+    elt,
+    {
+      childList: true,
+      characterData: includeCharacters,
+      subtree: includeCharacters
+    }
+  )
+}
