@@ -55,11 +55,13 @@ const observe = (params) => {
   const dimensionsListener = areAnyEltDimensionsWatched(watchedProperties) && createDimensionListener(context)
   const resizeObserver = dimensionsListener && new ResizeObserver(dimensionsListener)
 
-  const inputListener = areAnyEltCharactersWatched(watchedProperties) && createInputListener(context)
+  const inputListener = areAnyEltCharactersWatched(watchedProperties) &&
+    elements.some(isInputElement) &&
+    createInputListener(context)
 
   const chilrenListener = (
     areAnyEltChildrenWatched(watchedProperties) ||
-    (areAnyEltCharactersWatched(watchedProperties) && Array.from(elements).some(isContentEditableElt))
+    (areAnyEltCharactersWatched(watchedProperties) && elements.some(isContentEditableElt))
   ) &&
     createChildrenListener(context)
 
