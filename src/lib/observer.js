@@ -60,7 +60,7 @@ const observe = (params) => {
     createInputListener(context)
 
   const chilrenListener = (
-    areAnyEltChildrenWatched(watchedProperties) ||
+    (areAnyEltChildrenWatched(watchedProperties) && !elements.every(isInputElement)) ||
     (areAnyEltCharactersWatched(watchedProperties) && elements.some(isContentEditableElt))
   ) &&
     createChildrenListener(context)
