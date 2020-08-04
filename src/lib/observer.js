@@ -12,6 +12,7 @@ import {
   areAnyEltCharactersWatched,
   areAnyEltChildrenWatched,
   areContentEditableCharsWatched,
+  areEltChildrenWatched,
   computeInitialProps,
   createDimensionListener,
   createInputListener,
@@ -35,7 +36,7 @@ const unobserve = ({
     }
 
     e.classList.remove(...behaviourCssClasses)
-    WATCHABLE_PROPERTIES.map(prop => e.style.removeProperty(`--ea-${prop}`))
+    WATCHABLE_PROPERTIES.forEach(prop => e.style.removeProperty(`--ea-${prop}`))
   }
 }
 
@@ -77,13 +78,11 @@ const observe = (params) => {
       elt.addEventListener('input', inputListener)
     }
 
-    const contentEditableCharsWatched = areContentEditableCharsWatched(watchedProperties, elt)
-
-    if (mutationObserver && (contentEditableCharsWatched || areAnyEltChildrenWatched(watchedProperties))) {
+    if (mutationObserver && areEltChildrenWatched(watchedProperties, elt)) {
       mutationObserver && observeMutations(
         mutationObserver,
         elt,
-        contentEditableCharsWatched
+        areContentEditableCharsWatched(watchedProperties, elt)
       )
     }
 

@@ -68,6 +68,10 @@ export const areContentEditableCharsWatched = (watchedProperties, elt) => (
 
 export const areAnyEltChildrenWatched = watchedProperties => watchedProperties.includes('children')
 
+export const areEltChildrenWatched = (watchedProperties, elt) =>
+  !isInputElement(elt) &&
+  (areContentEditableCharsWatched(watchedProperties, elt) || areAnyEltChildrenWatched(watchedProperties))
+
 export const computeInitialProps = (elt, watchedProperties) => {
   const props = {}
 
@@ -213,10 +217,12 @@ export const createChildrenListener = ({
   }
 
   for (const elt of elements) {
-    observeMutations(
-      observer,
-      elt,
-      areContentEditableCharsWatched(watchedProperties, elt)
-    )
+    if (areEltChildrenWatched(watchedProperties, elt)) {
+      observeMutations(
+        observer,
+        elt,
+        areContentEditableCharsWatched(watchedProperties, elt)
+      )
+    }
   }
 }
