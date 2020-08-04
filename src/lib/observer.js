@@ -77,11 +77,15 @@ const observe = (params) => {
       elt.addEventListener('input', inputListener)
     }
 
-    mutationObserver && observeMutations(
-      mutationObserver,
-      elt,
-      areContentEditableCharsWatched(watchedProperties, elt)
-    )
+    const contentEditableCharsWatched = areContentEditableCharsWatched(watchedProperties, elt)
+
+    if (mutationObserver && (contentEditableCharsWatched || areAnyEltChildrenWatched(watchedProperties))) {
+      mutationObserver && observeMutations(
+        mutationObserver,
+        elt,
+        contentEditableCharsWatched
+      )
+    }
 
     applyStyle({
       elt,
