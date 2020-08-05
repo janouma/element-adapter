@@ -7,16 +7,19 @@ import {
 } from '../utils/dom'
 
 import {
-  applyStyle,
+  createDimensionListener,
+  createInputListener,
+  createChildrenListener
+} from './listeners_factories'
+
+import {
   areAnyEltDimensionsWatched,
   areAnyEltCharactersWatched,
   areAnyEltChildrenWatched,
   areContentEditableCharsWatched,
   areEltChildrenWatched,
   computeInitialProps,
-  createDimensionListener,
-  createInputListener,
-  createChildrenListener
+  adapt
 } from './adapters'
 
 const unobserve = ({
@@ -86,7 +89,7 @@ const observe = (params) => {
       )
     }
 
-    applyStyle({
+    adapt({
       elt,
       props,
       queries: compiledQueries,

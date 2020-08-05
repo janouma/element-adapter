@@ -4,23 +4,29 @@ import times from 'lodash.times'
 import observeAll from '../../src/lib/observer'
 
 import {
-  computeInitialProps,
   createDimensionListener,
   createInputListener,
-  createChildrenListener,
-  applyStyle
+  createChildrenListener
+} from '../../src/lib/listeners_factories'
+
+import {
+  computeInitialProps,
+  adapt
 } from '../../src/lib/adapters'
 
 import { WATCHABLE_PROPERTIES } from '../../src/lib/constants'
+
+jest.mock('../../src/lib/listeners_factories', () => ({
+  createDimensionListener: jest.fn().mockName('createDimensionListener'),
+  createInputListener: jest.fn().mockName('createInputListener'),
+  createChildrenListener: jest.fn().mockName('createChildrenListener')
+}))
 
 jest.mock('../../src/lib/adapters', () => ({
   ...jest.requireActual('../../src/lib/adapters'),
 
   computeInitialProps: jest.fn().mockName('computeInitialProps'),
-  createDimensionListener: jest.fn().mockName('createDimensionListener'),
-  createInputListener: jest.fn().mockName('createInputListener'),
-  createChildrenListener: jest.fn().mockName('createChildrenListener'),
-  applyStyle: jest.fn().mockName('applyStyle')
+  adapt: jest.fn().mockName('adapt')
 }))
 
 describe('lib/observer', () => {
@@ -76,7 +82,7 @@ describe('lib/observer', () => {
       'height',
       'orientation',
       'aspect-ratio'
-    ])('should observe dimensions if "%s" is watched', (watchedProperty) => {
+    ])('should observe dimensions if "%s" is watched', watchedProperty => {
       const params = {
         ...commonObserveParams,
         watchedProperties: [watchedProperty]
@@ -464,9 +470,9 @@ describe('lib/observer', () => {
       watchedProperties
     })
 
-    expect(applyStyle).toHaveBeenCalledTimes(elements.length)
+    expect(adapt).toHaveBeenCalledTimes(elements.length)
 
-    elements.forEach(e => expect(applyStyle).toHaveBeenCalledWith({
+    elements.forEach(e => expect(adapt).toHaveBeenCalledWith({
       elt: e,
       props: propsByElt.get(e),
       queries: compiledQueries,
