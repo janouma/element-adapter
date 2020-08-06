@@ -4,7 +4,6 @@ import {
 } from '../utils/dimensions'
 
 import {
-  isInputElement,
   countCharacters,
   findFirstEditableAncestor,
   observeMutations
@@ -99,11 +98,7 @@ export const createChildrenListener = ({
 
       const props = { ...propsCache.get(elt) }
 
-      if (
-        areAnyEltChildrenWatched(watchedProperties) &&
-        !elt.isContentEditable &&
-        !isInputElement(elt)
-      ) {
+      if (areAnyEltChildrenWatched(watchedProperties) && !elt.isContentEditable) {
         props.children = elt.childElementCount
       }
 
