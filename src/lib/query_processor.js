@@ -55,8 +55,8 @@ const compileQuery = query => {
 }
 
 export const runQuery = ({ query, unitsMeasurements, props }) =>
-  query.some(subQuery => subQuery.every((expression) => {
-    const [[prop, compare]] = Object.entries(expression)
+  query.some(booleanExpr => booleanExpr.every(comparison => {
+    const [[prop, compare]] = Object.entries(comparison)
     return compare(unitsMeasurements, props[prop])
   }))
 

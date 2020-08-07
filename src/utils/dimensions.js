@@ -17,14 +17,14 @@ const mesureUnits = (elt, units, measure) => {
 
   elt.appendChild(sample)
 
-  const mesurments = units.reduce((mes, unit) => ({
+  const measurements = units.reduce((mes, unit) => ({
     ...mes,
     [unit]: measure(sample, unit)
   }), {})
 
   elt.removeChild(sample)
 
-  return mesurments
+  return measurements
 }
 
 export const measureNonPercentUnits = (elt, units) => mesureUnits(
