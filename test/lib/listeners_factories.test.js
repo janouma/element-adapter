@@ -324,7 +324,7 @@ describe('lib/listeners_factories', () => {
         beforeEach(() => propsCache.set(editableParentDiv, cachedProps))
 
         it(
-          `should create listener that updates characters prop on characterData from a ${element.classList || element} node`,
+          `should create listener that updates characters prop on characterData from a ${element.classList || element.textContent} ${element.tagName || 'TEXT_NODE'} node`,
           () => {
             processChildren(mutations, observer)
 
