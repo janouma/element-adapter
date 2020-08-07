@@ -178,14 +178,37 @@ describe('lib/listeners_factories', () => {
         watchedProperties: [watchedProperty]
       })
 
-      it(`should stop observing before adapting style when ${watchedProperty} are watched`, () => {
-        processChildren([], observer)
-        expect(observer.disconnect).toHaveBeenCalledTimes(1)
-      })
+      describe(`when ${watchedProperty} are watched`, () => {
+        it(`should stop observing before adapting style when ${watchedProperty} are watched`, () => {
+          processChildren([], observer)
+          expect(observer.disconnect).toHaveBeenCalledTimes(1)
+        })
 
-      it(`should not observe input elements after adapting style when ${watchedProperty} are watched`, () => {
-        processChildren([], observer)
-        expect(observer.observe).not.toHaveBeenCalled()
+        it(`should not observe input elements after adapting style when ${watchedProperty} are watched`, () => {
+          processChildren([], observer)
+          expect(observer.observe).not.toHaveBeenCalled()
+        })
+
+        it.each([
+          'childList',
+          'characterData'
+        ])('should ignore "%s" mutations on detached nodes', type => {
+          const mutations = [
+            {
+              type,
+              target: document.createTextNode('sqd dqdqs')
+            },
+            {
+              type,
+              target: document.createElement('div')
+            }
+          ]
+
+          processChildren(mutations, observer)
+
+          mutations.forEach(({ target }) => expect(propsCache.get(target)).not.toBeDefined())
+          expect(adapt).not.toHaveBeenCalled()
+        })
       })
     })
 
