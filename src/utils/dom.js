@@ -1,5 +1,16 @@
+const nonInputTypes = [
+  'button',
+  'submit',
+  'image',
+  'checkbox',
+  'radio',
+  'hidden',
+  'range',
+  'reset'
+]
+
 export const isInputElement = elt =>
-  (elt.tagName === 'INPUT' && !['button', 'submit', 'image'].includes(elt.getAttribute('type'))) ||
+  (elt.tagName === 'INPUT' && !nonInputTypes.includes(elt.getAttribute('type'))) ||
   elt.tagName === 'TEXTAREA'
 
 export const countCharacters = elt => {
