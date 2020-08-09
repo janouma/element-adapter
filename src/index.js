@@ -20,7 +20,10 @@ export default function addAdaptiveBehaviour ({ target, queries = {}, ...options
     throw new Error('at least one query or one watched properties must be provided')
   }
 
-  const removeAdaptiveBehaviour = observe({
+  const {
+    unobserve: removeAdaptiveBehaviour,
+    applyStyle: applyAdaptiveBehaviour
+  } = observe({
     elements,
     compiledQueries,
     units,
@@ -32,5 +35,8 @@ export default function addAdaptiveBehaviour ({ target, queries = {}, ...options
     ])
   })
 
-  return removeAdaptiveBehaviour
+  return {
+    removeAdaptiveBehaviour,
+    applyAdaptiveBehaviour
+  }
 }

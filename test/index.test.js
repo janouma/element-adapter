@@ -27,10 +27,15 @@ describe('index', () => {
 
   const elements = ['div']
   const removeAdaptiveBehaviour = () => {}
+  const applyAdaptiveBehaviour = () => {}
 
   compileQueryList.mockImplementation(() => compiled)
   parseTarget.mockImplementation(() => elements)
-  observe.mockImplementation(() => removeAdaptiveBehaviour)
+
+  observe.mockImplementation(() => ({
+    unobserve: removeAdaptiveBehaviour,
+    applyStyle: applyAdaptiveBehaviour
+  }))
 
   afterEach(() => jest.clearAllMocks())
 
@@ -39,7 +44,10 @@ describe('index', () => {
     const queries = 'queries'
     const anyOptions = 'any options'
 
-    const cleanUp = addAdaptiveBehaviour({ target, queries, anyOptions })
+    const {
+      removeAdaptiveBehaviour: cleanUp,
+      applyAdaptiveBehaviour: applyStyle
+    } = addAdaptiveBehaviour({ target, queries, anyOptions })
 
     expect(validateQueries).toHaveBeenCalledWith(queries)
     expect(validateOptions).toHaveBeenCalledWith({ anyOptions })
@@ -52,6 +60,7 @@ describe('index', () => {
     })
 
     expect(cleanUp).toBe(removeAdaptiveBehaviour)
+    expect(applyStyle).toBe(applyAdaptiveBehaviour)
   })
 
   it('should merge and dedup options.watchedProperties and compiled.watchedProperties', () => {

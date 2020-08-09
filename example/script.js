@@ -1,6 +1,9 @@
 import addAdaptiveBehaviour from '../dist/element-adapter.js'
 
-const removeAdaptiveBehaviour = addAdaptiveBehaviour({
+const {
+  removeAdaptiveBehaviour,
+  applyAdaptiveBehaviour
+} = addAdaptiveBehaviour({
   target: document.querySelectorAll('.component'),
 
   queries: {
@@ -15,9 +18,15 @@ const removeAdaptiveBehaviour = addAdaptiveBehaviour({
   // , watchedProperties: ['orientation']
 })
 
-document.querySelector('button')
+document.querySelector('button.stop')
   .addEventListener(
     'click',
     () => removeAdaptiveBehaviour(),
     { once: true }
+  )
+
+document.querySelector('button.apply')
+  .addEventListener(
+    'click',
+    () => applyAdaptiveBehaviour()
   )

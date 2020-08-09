@@ -22,6 +22,8 @@ import {
   adapt
 } from './adapters'
 
+const INVALID = {}
+
 const unobserve = ({
   elements,
   mutationObserver,
@@ -98,13 +100,31 @@ const observe = (params) => {
     })
   }
 
-  return () => unobserve({
-    elements,
-    mutationObserver,
-    resizeObserver,
-    inputListener,
-    behaviourCssClasses: Object.keys(compiledQueries)
-  })
+  return {
+    unobserve: () => {
+      propsCache.set(INVALID, true)
+
+      unobserve({
+        elements,
+        mutationObserver,
+        resizeObserver,
+        inputListener,
+        behaviourCssClasses: Object.keys(compiledQueries)
+      })
+    },
+
+    applyStyle: () => {
+      if (!propsCache.get(INVALID)) {
+        elements.forEach(elt => adapt({
+          elt,
+          props: propsCache.get(elt),
+          queries: compiledQueries,
+          units,
+          percentUnits
+        }))
+      }
+    }
+  }
 }
 
 export default observe

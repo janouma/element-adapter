@@ -518,7 +518,7 @@ describe('lib/observer', () => {
     }
 
     it('should stop observing when calling cleanUp function', () => {
-      const cleanUp = observeAll(params)
+      const { unobserve: cleanUp } = observeAll(params)
 
       cleanUp()
 
@@ -534,7 +534,7 @@ describe('lib/observer', () => {
     })
 
     it('should not attempt to stop observing if no properties are watched', () => {
-      const cleanUp = observeAll({
+      const { unobserve: cleanUp } = observeAll({
         ...params,
         watchedProperties: []
       })
@@ -547,7 +547,7 @@ describe('lib/observer', () => {
     })
 
     it('should clear all behavioural styles', () => {
-      const cleanUp = observeAll(params)
+      const { unobserve: cleanUp } = observeAll(params)
 
       cleanUp()
 
@@ -562,6 +562,75 @@ describe('lib/observer', () => {
             .toHaveBeenCalledWith(`--ea-${prop}`)
         )
       })
+    })
+  })
+
+  describe('#refresh', () => {
+    const elements = [
+      document.createElement('div'),
+      document.createElement('span')
+    ]
+
+    const compiledQueries = {
+      classA: '{ width: greaterThan(constant(300)) }',
+      classB: '{ characters: greaterThan(constant(300)) }',
+      classC: '{ children: greaterThan(constant(3)) }'
+    }
+
+    const units = ['em']
+    const percentUnits = ['w%']
+
+    const params = {
+      elements,
+      compiledQueries,
+
+      units,
+      percentUnits,
+
+      watchedProperties: [
+        'width',
+        'children',
+        'characters'
+      ]
+    }
+
+    it('should apply adaptive behaviour on elements', () => {
+      const propsByElt = new WeakMap()
+      const [div, span] = elements
+
+      propsByElt.set(div, { width: 532 })
+      propsByElt.set(span, { width: 266 })
+
+      times(2, () => computeInitialProps.mockImplementationOnce(e => propsByElt.get(e)))
+
+      const { applyStyle } = observeAll(params)
+
+      adapt.mockClear()
+
+      applyStyle()
+
+      expect(adapt).toHaveBeenCalledTimes(elements.length)
+      elements.forEach(e => expect(adapt).toHaveBeenCalledWith({
+        elt: e,
+        props: propsByElt.get(e),
+        queries: compiledQueries,
+        units,
+        percentUnits
+      }))
+    })
+
+    it('should do nothing after cleanUp have been called', () => {
+      const {
+        unobserve: cleanUp,
+        applyStyle
+      } = observeAll(params)
+
+      adapt.mockClear()
+
+      cleanUp()
+      applyStyle()
+
+      expect(adapt).not.toHaveBeenCalled()
     })
   })
 })

@@ -16,9 +16,9 @@
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.js\" \"test/**/*.js\"",
     "test": "jest",
-    "build": "microbundle --no-pkg-main -f module",
+    "build": "microbundle --no-pkg-main -f module -o dist/$npm_package_name$suffix.js",
     "dev": "npm run build -- watch",
-    "build:prod": "npm run build -- -o dist/$npm_package_name.esm.js --no-sourcemap"
+    "build:prod": "suffix=.esm npm run build -- --no-sourcemap"
   },
   "jest": {
     "transform": {
