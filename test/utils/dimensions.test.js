@@ -3,7 +3,8 @@
 import {
   measureNonPercentUnits,
   measurePercentUnits,
-  computeOrientation
+  computeOrientation,
+  computeRatio
 } from '../../src/utils/dimensions'
 
 describe('utils/dimensions', () => {
@@ -108,6 +109,21 @@ describe('utils/dimensions', () => {
       ${'width == height'}    | ${'square'}     | ${16} | ${16}
     `('should return "$orientation" when $case', ({ orientation, width, height }) => {
       expect(computeOrientation(width, height)).toBe(orientation)
+    })
+  })
+
+  describe('#computeRatio', () => {
+    it('should return 1 if width and height equal 0', () => {
+      expect(computeRatio(0, 0)).toBe(1)
+    })
+
+    it('should return Infinity if height equal 0', () => {
+      expect(computeRatio(1, 0)).toBe(Infinity)
+    })
+
+    it('should return NaN if width or height is undefined', () => {
+      expect(Number.isNaN(computeRatio(undefined, 1))).toBe(true)
+      expect(Number.isNaN(computeRatio(undefined, 0))).toBe(true)
     })
   })
 })

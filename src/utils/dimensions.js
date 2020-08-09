@@ -56,4 +56,4 @@ export const isDimension = prop => ['width', 'height'].includes(prop)
 export const computeOrientation =
   (width, height) => width > height ? 'landscape' : width < height ? 'portrait' : 'square'
 
-export const computeRatio = (width, height) => width / height
+export const computeRatio = (width, height) => width === 0 && height === 0 ? 1 : width / height
