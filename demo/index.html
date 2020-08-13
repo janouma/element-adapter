@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale = 1.0, user-scalable = no, maximum-scale=1.0">
+  <meta charset="utf-8">
+  <style>
+    @font-face {
+      font-family: 'Avenir Next';
+      src: url(assets/fonts/avenir-next-demibold.woff) format('woff');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Avenir Next';
+      src: url(assets/fonts/avenir-next-regular.woff) format('woff');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      font-family: 'Avenir Next';
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    main {
+      max-width: 1350px;
+      margin: 0 auto;
+      padding: 1.5em 3em;
+    }
+
+    h1 {
+      text-align: center;
+      color: rgb(130, 130, 155);
+      font-size: 1.625em;
+      margin-bottom: 1.66em;
+    }
+
+    .articles section {
+      display: grid;
+      grid-gap: 0.5em;
+      grid-template-columns: repeat(auto-fit, minmax(min(32px, 100%), 1fr));
+      margin: 3em 0;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>ELEMENT-ADAPTER DEMO</h1>
+    <div class="articles">
+      <article-card>
+        <div slot="title">Lorem ipsum dolor sit amet</div>
+  
+        <div slot="summary">
+          Praesent dignissim, sapien et porttitor fringilla, augue elit eleifend nunc, non sollicitudin sem lectus a sapien. In hac habitasse platea dictumst. Proin auctor posuere auctor. Ut sit amet enim velit.
+        </div>
+
+        <img slot="media" src="assets/images/chinese_mall.jpg">
+        <img slot="media" src="assets/images/red_and_silver_car.jpg">
+        <img slot="media" src="assets/images/lone_tree.jpg">
+        <img slot="media" src="assets/images/woman_holding_book.jpg">
+    
+        <p>Nullam sagittis hendrerit rhoncus. Duis fermentum fringilla posuere. Etiam in magna facilisis, ornare urna non, laoreet felis. Sed arcu libero, porta a risus at, convallis mollis lorem.</p>
+  
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed egestas interdum velit, non porta orci sodales et. Aenean at felis consequat, luctus purus et, gravida mi. Curabitur eu augue a nisi mattis facilisis sed ac enim. Nam tincidunt cursus rhoncus. Phasellus ultricies sit amet libero sed gravida.</p>
+      </article-card>
+    </div>
+  </main>
+  <script type="module" src="article_card/script.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>

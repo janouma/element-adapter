@@ -1,0 +1,163 @@
+:host,
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:host {
+  display: block;
+  contain: content;
+}
+
+#content-root {
+  font-size: max(
+    0.5em,
+    calc((4.25/100) * var(--ea-width, 0))
+  );
+  position: relative;
+}
+
+header {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+::slotted([slot=title]) {
+  /* h2 style */
+  display: block;
+  font-size: 1.5em;
+  margin-block-start: 0.415em;
+  margin-block-end: 0.415em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+::slotted(:not([slot=title])) {
+  text-align: justify;
+}
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.gallery ::slotted(img) {
+  border: 0.5px solid transparent;
+  width: 100%;
+  height: var(--ea-width, 0);
+  object-fit: cover;
+}
+
+.gallery ::slotted(img:not(:first-of-type)) {
+  --columns: 1;
+  max-width: calc(100% / var(--columns));
+}
+
+.gallery ::slotted(img:nth-of-type(1n + 2)),
+::slotted([slot=summary]),
+::slotted(:not([slot])) {
+  display: none;
+}
+
+::slotted(:not([slot])) {
+  /* p style */
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+/* width > 188px */
+
+#content-root.width-gt-188px::after {
+  content: '...';
+  position: absolute;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0), white 66%);
+  bottom: 0;
+  right: 0;
+  padding-left: 2em;
+  line-height: 1;
+}
+
+.width-gt-188px .gallery {
+  margin-bottom: 1em;
+}
+
+.width-gt-188px header {
+  flex-direction: column;
+}
+
+.width-gt-188px .gallery ::slotted(img:nth-of-type(1n + 2)) {
+  display: unset;
+}
+
+.width-gt-188px .gallery ::slotted(img:nth-of-type(1n + 3)) {
+  display: none;
+}
+
+.width-gt-188px .gallery ::slotted(img:not(:first-of-type)) {
+  max-height: calc((9/16) * (var(--ea-width, 0) / var(--columns)));
+}
+
+.width-gt-188px ::slotted([slot=summary]) {
+  display: block;
+  max-height: 2.5em;
+  overflow-y: hidden;
+}
+
+/* width > 375px */
+
+#content-root.width-gt-375px::after {
+  all: unset;
+}
+
+.width-gt-375px .gallery ::slotted(img) {
+  flex: 0 1 100%;
+  max-height: calc((9/16) * var(--ea-width, 0));
+}
+
+.width-gt-375px .gallery ::slotted(img:not(:first-of-type)) {
+  --columns: 2;
+  max-height: calc((3/4) * (var(--ea-width, 0) / var(--columns)));
+}
+
+.width-gt-375px .gallery ::slotted(img:nth-of-type(1n + 3)) {
+  display: unset;
+}
+
+.width-gt-375px .gallery ::slotted(img:nth-of-type(1n + 4)) {
+  display: none;
+}
+
+.width-gt-375px ::slotted([slot=title]) {
+  white-space: unset;
+}
+
+.width-gt-375px ::slotted([slot=summary]) {
+  max-height: unset;
+}
+
+/* width > 768px */
+
+.width-gt-768px .gallery ::slotted(img:not(:first-of-type)) {
+  --columns: 3;
+}
+
+.width-gt-768px .gallery ::slotted(img:nth-of-type(1n + 4)) {
+  display: unset;
+}
+
+.width-gt-768px ::slotted([slot=summary]) {
+  font-weight: bold;
+}
+
+.width-gt-768px ::slotted(:not([slot])) {
+  display: block;
+}
