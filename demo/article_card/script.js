@@ -34,9 +34,7 @@ class ArticleCard extends HTMLElement {
         'width-gt-188px': 'width > 188px',
         'width-gt-375px': 'width > 375px',
         'width-gt-768px': 'width > 768px'
-      },
-
-      watchedProperties: ['width']
+      }
     }))
   }
 
