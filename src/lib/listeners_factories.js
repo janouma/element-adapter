@@ -83,38 +83,44 @@ export const createChildrenListener = ({
   observer.disconnect()
 
   for (const { type, target } of mutations) {
-    const { parentElement } = target
+    const { parentNode } = target
 
-    if (parentElement && ['childList', 'characterData'].includes(type)) {
+    if (parentNode && ['childList', 'characterData'].includes(type)) {
       let elt
+      let hasChildrenProp
+      let hasCharactersProp
 
       if (target.nodeType !== window.Node.TEXT_NODE) {
         elt = areContentEditableCharsWatched(watchedProperties, target)
           ? findFirstEditableAncestor(target)
           : target
       } else {
-        elt = findFirstEditableAncestor(parentElement)
+        elt = findFirstEditableAncestor(parentNode)
       }
 
       const props = { ...propsCache.get(elt) }
 
       if (areAnyEltChildrenWatched(watchedProperties) && !elt.isContentEditable) {
         props.children = elt.childElementCount
+        hasChildrenProp = true
       }
 
       if (areContentEditableCharsWatched(watchedProperties, elt)) {
         props.characters = countCharacters(elt)
+        hasCharactersProp = true
       }
 
-      propsCache.set(elt, props)
+      if (hasChildrenProp || hasCharactersProp) {
+        propsCache.set(elt, props)
 
-      adapt({
-        elt,
-        props,
-        queries: compiledQueries,
-        units,
-        percentUnits
-      })
+        adapt({
+          elt,
+          props,
+          queries: compiledQueries,
+          units,
+          percentUnits
+        })
+      }
     }
   }
 

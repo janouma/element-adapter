@@ -189,25 +189,47 @@ describe('lib/listeners_factories', () => {
           expect(observer.observe).not.toHaveBeenCalled()
         })
 
-        it.each([
+        ;[
           'childList',
           'characterData'
-        ])('should ignore "%s" mutations on detached nodes', type => {
-          const mutations = [
-            {
-              type,
-              target: document.createTextNode('sqd dqdqs')
-            },
-            {
-              type,
-              target: document.createElement('div')
+        ].forEach(type => {
+          it(`should ignore "${type}" mutations on detached nodes`, () => {
+            const mutations = [
+              {
+                type,
+                target: document.createTextNode('sqd dqdqs')
+              },
+              {
+                type,
+                target: document.createElement('div')
+              }
+            ]
+
+            processChildren(mutations, observer)
+
+            mutations.forEach(({ target }) => expect(propsCache.get(target)).not.toBeDefined())
+            expect(adapt).not.toHaveBeenCalled()
+          })
+
+          it(`should NOT ignore "${type}" mutations on nodes having DocumentFragment as parentNode when "children" is watched`, () => {
+            const fragment = document.createDocumentFragment()
+            const div = document.createElement('div')
+
+            fragment.appendChild(div)
+            div.appendChild(document.createElement('span'))
+
+            const mutations = [{ type, target: div }]
+
+            processChildren(mutations, observer)
+
+            if (watchedProperty === 'children') {
+              expect(propsCache.get(div)).toEqual({ children: 1 })
+              expect(adapt).toHaveBeenCalledTimes(1)
+            } else {
+              expect(propsCache.get(div)).not.toBeDefined()
+              expect(adapt).not.toHaveBeenCalled()
             }
-          ]
-
-          processChildren(mutations, observer)
-
-          mutations.forEach(({ target }) => expect(propsCache.get(target)).not.toBeDefined())
-          expect(adapt).not.toHaveBeenCalled()
+          })
         })
       })
     })
