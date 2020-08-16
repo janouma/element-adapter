@@ -188,49 +188,6 @@ describe('lib/listeners_factories', () => {
           processChildren([], observer)
           expect(observer.observe).not.toHaveBeenCalled()
         })
-
-        ;[
-          'childList',
-          'characterData'
-        ].forEach(type => {
-          it(`should ignore "${type}" mutations on detached nodes`, () => {
-            const mutations = [
-              {
-                type,
-                target: document.createTextNode('sqd dqdqs')
-              },
-              {
-                type,
-                target: document.createElement('div')
-              }
-            ]
-
-            processChildren(mutations, observer)
-
-            mutations.forEach(({ target }) => expect(propsCache.get(target)).not.toBeDefined())
-            expect(adapt).not.toHaveBeenCalled()
-          })
-
-          it(`should NOT ignore "${type}" mutations on nodes having DocumentFragment as parentNode when "children" is watched`, () => {
-            const fragment = document.createDocumentFragment()
-            const div = document.createElement('div')
-
-            fragment.appendChild(div)
-            div.appendChild(document.createElement('span'))
-
-            const mutations = [{ type, target: div }]
-
-            processChildren(mutations, observer)
-
-            if (watchedProperty === 'children') {
-              expect(propsCache.get(div)).toEqual({ children: 1 })
-              expect(adapt).toHaveBeenCalledTimes(1)
-            } else {
-              expect(propsCache.get(div)).not.toBeDefined()
-              expect(adapt).not.toHaveBeenCalled()
-            }
-          })
-        })
       })
     })
 
@@ -409,6 +366,26 @@ describe('lib/listeners_factories', () => {
             }
           )
         })
+      })
+
+      it('should not applies style to non-editable elements when children are not watched', () => {
+        const div = document.createElement('div')
+
+        const processChildren = createChildrenListener({
+          propsCache,
+          compiledQueries,
+          units,
+          percentUnits,
+          elements: [div],
+          watchedProperties
+        })
+
+        const mutations = [{ type: 'characterData', target: div }]
+
+        processChildren(mutations, observer)
+
+        expect(propsCache.get(div)).not.toBeDefined()
+        expect(adapt).not.toHaveBeenCalled()
       })
 
       it('should not observe non-editable elements after adapting style when children are not watched', () => {

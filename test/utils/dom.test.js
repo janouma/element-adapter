@@ -3,7 +3,7 @@
 import {
   isInputElement,
   countCharacters,
-  findFirstEditableAncestor,
+  findCurrentTarget,
   observeMutations
 } from '../../src/utils/dom'
 
@@ -71,32 +71,39 @@ describe('utils/dom', () => {
     })
   })
 
-  it('#findFirstEditableAncestor should find the first editable ancestor of a node', () => {
-    const FIRST_ANCESTOR = 0
-    const SND_ANCESTOR = 1
-    const LEAF_NODE = 2
+  describe('#findCurrentTarget', () => {
+    const firstAncestor = document.createElement('section')
+    const sndAncestor = document.createElement('div')
+    const thirdAncestor = document.createElement('article')
+    const leafNode = document.createTextNode('text node')
 
-    const body = document.createElement('body')
+    const observedElts = [firstAncestor, thirdAncestor]
 
-    const nodes = [
-      document.createElement('section'),
-      document.createElement('div'),
-      document.createTextNode('text node')
-    ]
+    firstAncestor.appendChild(sndAncestor)
+    sndAncestor.appendChild(thirdAncestor)
+    thirdAncestor.appendChild(leafNode)
 
-    body.appendChild(nodes[FIRST_ANCESTOR])
-    nodes[FIRST_ANCESTOR].appendChild(nodes[SND_ANCESTOR])
-    nodes[SND_ANCESTOR].appendChild(nodes[LEAF_NODE])
-
-    nodes.forEach(n => {
-      n.isContentEditable = true
-
-      if (n.nodeType !== window.Node.TEXT_NODE) {
-        n.setAttribute('contenteditable', n.isContentEditable)
-      }
+    it('should return target if target is the actual currentTarget', () => {
+      expect(findCurrentTarget(observedElts, firstAncestor)).toBe(firstAncestor)
     })
 
-    expect(findFirstEditableAncestor(nodes[LEAF_NODE])).toBe(nodes[FIRST_ANCESTOR])
+    it('should return closest observed parent', () => {
+      expect(findCurrentTarget(observedElts, sndAncestor)).toBe(firstAncestor)
+      expect(findCurrentTarget(observedElts, thirdAncestor)).toBe(thirdAncestor)
+    })
+
+    it('should works for text nodes', () => {
+      expect(findCurrentTarget(observedElts, leafNode)).toBe(thirdAncestor)
+    })
+
+    it('should return nothing when current target is not included in node tree', () => {
+      const div = document.createElement('div')
+      const span = document.createElement('span')
+
+      div.appendChild(span)
+
+      expect(findCurrentTarget(observedElts, span)).not.toBeDefined()
+    })
   })
 
   describe('#observeMutations', () => {

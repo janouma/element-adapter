@@ -27,10 +27,16 @@ export const countCharacters = elt => {
 
 export const isContentEditableElt = elt => elt.isContentEditable
 
-export const findFirstEditableAncestor = elt => {
-  return !elt.parentElement.isContentEditable
-    ? elt
-    : findFirstEditableAncestor(elt.parentElement)
+export const findCurrentTarget = (elements, target) => {
+  const currentTarget = elements.find(e => e === target)
+
+  if (currentTarget) {
+    return currentTarget
+  }
+
+  if (target.parentNode) {
+    return findCurrentTarget(elements, target.parentNode)
+  }
 }
 
 export const observeMutations = (

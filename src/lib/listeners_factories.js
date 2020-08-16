@@ -5,7 +5,7 @@ import {
 
 import {
   countCharacters,
-  findFirstEditableAncestor,
+  findCurrentTarget,
   observeMutations
 } from '../utils/dom'
 
@@ -83,43 +83,36 @@ export const createChildrenListener = ({
   observer.disconnect()
 
   for (const { type, target } of mutations) {
-    const { parentNode } = target
+    if (['childList', 'characterData'].includes(type)) {
+      const currentTarget = findCurrentTarget(elements, target)
 
-    if (parentNode && ['childList', 'characterData'].includes(type)) {
-      let elt
-      let hasChildrenProp
-      let hasCharactersProp
+      if (currentTarget) {
+        let hasChildrenProp
+        let hasCharactersProp
 
-      if (target.nodeType !== window.Node.TEXT_NODE) {
-        elt = areContentEditableCharsWatched(watchedProperties, target)
-          ? findFirstEditableAncestor(target)
-          : target
-      } else {
-        elt = findFirstEditableAncestor(parentNode)
-      }
+        const props = { ...propsCache.get(currentTarget) }
 
-      const props = { ...propsCache.get(elt) }
+        if (areAnyEltChildrenWatched(watchedProperties) && !currentTarget.isContentEditable) {
+          props.children = currentTarget.childElementCount
+          hasChildrenProp = true
+        }
 
-      if (areAnyEltChildrenWatched(watchedProperties) && !elt.isContentEditable) {
-        props.children = elt.childElementCount
-        hasChildrenProp = true
-      }
+        if (areContentEditableCharsWatched(watchedProperties, currentTarget)) {
+          props.characters = countCharacters(currentTarget)
+          hasCharactersProp = true
+        }
 
-      if (areContentEditableCharsWatched(watchedProperties, elt)) {
-        props.characters = countCharacters(elt)
-        hasCharactersProp = true
-      }
+        if (hasChildrenProp || hasCharactersProp) {
+          propsCache.set(currentTarget, props)
 
-      if (hasChildrenProp || hasCharactersProp) {
-        propsCache.set(elt, props)
-
-        adapt({
-          elt,
-          props,
-          queries: compiledQueries,
-          units,
-          percentUnits
-        })
+          adapt({
+            elt: currentTarget,
+            props,
+            queries: compiledQueries,
+            units,
+            percentUnits
+          })
+        }
       }
     }
   }
