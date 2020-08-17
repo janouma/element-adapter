@@ -13,6 +13,10 @@
   "source": "src/index.js",
   "main": "dist/element-adapter.esm.js",
   "module": "dist/element-adapter.esm.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janouma/element-adapter.git"
+  },
   "scripts": {
     "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.js\" \"test/**/*.js\"",
     "test": "jest",
