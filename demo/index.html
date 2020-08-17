@@ -19,6 +19,17 @@
       font-style: normal;
     }
 
+    @font-face {
+      font-family: 'Share Tech Mono';
+      src: url(assets/fonts/share_tech_mono.woff) format('woff');
+      font-weight: 400 700;
+      font-style: normal;
+    }
+
+    :root {
+      --grey-blue: 130, 130, 155;
+    }
+
     *,
     *::before,
     *::after {
@@ -39,9 +50,17 @@
 
     h1 {
       text-align: center;
-      color: rgb(130, 130, 155);
       font-size: 1.625em;
       margin-bottom: 1.66em;
+      color: rgb(var(--grey-blue));
+    }
+
+    h2 {
+      padding-left: 0.125em;
+      border-style: solid;
+      border-width: 0 0 0.125em 0;
+      text-transform: uppercase;
+      color: rgba(var(--grey-blue), 0.75);
     }
 
     .articles section {
@@ -50,12 +69,17 @@
       grid-template-columns: repeat(auto-fit, minmax(min(32px, 100%), 1fr));
       margin: 3em 0;
     }
+
+    expanding-input {
+      font-family: 'Share Tech Mono';
+    }
   </style>
 </head>
 
 <body>
   <main>
     <h1>ELEMENT-ADAPTER DEMO</h1>
+    <h2>Articles</h2>
     <div class="articles">
       <article-card>
         <div slot="title">Lorem ipsum dolor sit amet</div>
@@ -72,8 +96,12 @@
         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed egestas interdum velit, non porta orci sodales et. Aenean at felis consequat, luctus purus et, gravida mi. Curabitur eu augue a nisi mattis facilisis sed ac enim. Nam tincidunt cursus rhoncus. Phasellus ultricies sit amet libero sed gravida.</p>
       </article-card>
     </div>
+
+    <h2>Expanding input</h2>
+    <expanding-input></expanding-input>
   </main>
   <script type="module" src="article_card/script.js"></script>
+  <script type="module" src="expanding_input/script.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 

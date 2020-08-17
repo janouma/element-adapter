@@ -1,7 +1,6 @@
 import addAdaptiveBehaviour from '../../dist/element-adapter.esm.js'
 
 const { HTMLElement, customElements } = window
-
 const template = document.createElement('template')
 
 template.innerHTML = `

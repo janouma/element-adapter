@@ -1,0 +1,30 @@
+:host,
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:host {
+  display: block;
+  contain: content;
+}
+
+input {
+  --hpadding: 0.2em;
+  --content-width: max(1ch, calc(var(--ea-characters, 1) * 1ch));
+
+  font-family: inherit;
+  font-size: 3em;
+  line-height: 1;
+  padding: 0.1em var(--hpadding) 0.2em var(--hpadding);
+  border: 0.05em solid rgb(220, 220, 250);
+  border-radius: 0.125em;
+  width: calc(var(--content-width) + 2 * var(--hpadding));
+  max-width: 100%;
+}
+
+input:focus {
+  outline: none;
+  border-color: blueviolet;
+}
