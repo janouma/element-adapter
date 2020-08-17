@@ -76,7 +76,7 @@ ADD 'classE' WHEN
 In addition to css classes, css custom properties *( variables )* are set on watched elements:
 
 property | type | unit
-- | - | -
+-------- | ---- | ----
 `--ea-width` | float | `px`
 `--ea-height` | float | `px`
 `--ea-orientation` | `landscape`, `portrait` or `square` | -
