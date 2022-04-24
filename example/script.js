@@ -7,12 +7,26 @@ const {
   target: document.querySelectorAll('.component'),
 
   queries: {
-    classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`,
-    classB: 'orientation == landscape',
-    classC: 'width > 75%',
-    classD: 'characters > 10',
-    classE: 'children >= 2 && children < 5',
-    classF: 'characters == 0'
+    [`width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`]:
+     'classA',
+
+    'orientation == landscape':
+      'classB',
+
+    'orientation == portrait' (element, props) {
+      console.debug(element, 'changed:\n', props)
+    },
+
+    'width > 75%':
+      'classC',
+
+    'characters > 10':
+      'classD',
+
+    'children >= 2 && children < 5':
+      'classE',
+
+    'characters == 0': 'classF'
   }
 
   // , watchedProperties: ['orientation']

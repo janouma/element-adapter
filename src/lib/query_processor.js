@@ -61,15 +61,15 @@ export const runQuery = ({ query, unitsMeasurements, props }) =>
   }))
 
 export const compileQueryList = queries => {
-  const compiledQueries = {}
+  const compiledQueries = new Map()
   const units = []
   const percentUnits = []
   const watchedProperties = []
 
-  for (const [cssClass, query] of Object.entries(queries)) {
+  for (const [query, behaviour] of Object.entries(queries)) {
     const compilationOut = compileQuery(query)
 
-    compiledQueries[cssClass] = compilationOut.query
+    compiledQueries.set(behaviour, compilationOut.query)
     units.push(...compilationOut.units)
     percentUnits.push(...compilationOut.percentUnits)
     watchedProperties.push(...compilationOut.watchedProperties)

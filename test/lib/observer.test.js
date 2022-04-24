@@ -11,7 +11,8 @@ import {
 
 import {
   computeInitialProps,
-  adapt
+  adapt,
+  clearFunctionBehaviourApplyCache
 } from '../../src/lib/adapters'
 
 import { WATCHABLE_PROPERTIES } from '../../src/lib/constants'
@@ -26,7 +27,8 @@ jest.mock('../../src/lib/adapters', () => ({
   ...jest.requireActual('../../src/lib/adapters'),
 
   computeInitialProps: jest.fn().mockName('computeInitialProps'),
-  adapt: jest.fn().mockName('adapt')
+  adapt: jest.fn().mockName('adapt'),
+  clearFunctionBehaviourApplyCache: jest.fn().mockName('clearFunctionBehaviourApplyCache')
 }))
 
 describe('lib/observer', () => {
@@ -72,7 +74,7 @@ describe('lib/observer', () => {
 
     const commonObserveParams = {
       elements,
-      compiledQueries: { classA: '{ width: greaterThan(constant(300)) }' },
+      compiledQueries: new Map([[['classA'], ['{ width: greaterThan(constant(300)) }']]]),
       units: ['em'],
       percentUnits: ['w%']
     }
@@ -131,7 +133,7 @@ describe('lib/observer', () => {
 
     const commonObserveParams = {
       elements,
-      compiledQueries: { classA: '{ characters: greaterThan(constant(300)) }' },
+      compiledQueries: new Map([[['classA'], ['{ characters: greaterThan(constant(300)) }']]]),
       units: [],
       percentUnits: []
     }
@@ -228,7 +230,7 @@ describe('lib/observer', () => {
 
     const commonObserveParams = {
       elements,
-      compiledQueries: { classA: '{ children: greaterThan(constant(3)) }' },
+      compiledQueries: new Map([[['classA'], ['{ children: greaterThan(constant(3)) }']]]),
       units: [],
       percentUnits: []
     }
@@ -404,7 +406,7 @@ describe('lib/observer', () => {
 
     observeAll({
       elements,
-      compiledQueries: { classA: '{ width: greaterThan(constant(300)) }' },
+      compiledQueries: new Map([[['classA'], ['{ width: greaterThan(constant(300)) }']]]),
       units: ['em'],
       percentUnits: ['w%'],
       watchedProperties
@@ -431,7 +433,7 @@ describe('lib/observer', () => {
 
     observeAll({
       elements,
-      compiledQueries: { classA: '{ width: greaterThan(constant(300)) }' },
+      compiledQueries: new Map([[['classA'], ['{ width: greaterThan(constant(300)) }']]]),
       units: ['em'],
       percentUnits: ['w%'],
       watchedProperties: ['width']
@@ -452,7 +454,7 @@ describe('lib/observer', () => {
     ]
 
     const [div, span] = elements
-    const compiledQueries = { classA: '{ width: greaterThan(constant(300)) }' }
+    const compiledQueries = new Map([[['classA'], ['{ width: greaterThan(constant(300)) }']]])
     const units = ['em']
     const percentUnits = ['w%']
     const watchedProperties = ['width']
@@ -501,11 +503,12 @@ describe('lib/observer', () => {
     const params = {
       elements,
 
-      compiledQueries: {
-        classA: '{ width: greaterThan(constant(300)) }',
-        classB: '{ characters: greaterThan(constant(300)) }',
-        classC: '{ children: greaterThan(constant(3)) }'
-      },
+      compiledQueries: new Map([
+        ['classA', '{ width: greaterThan(constant(300)) }'],
+        ['classB', '{ characters: greaterThan(constant(300)) }'],
+        ['classC', '{ children: greaterThan(constant(3)) }'],
+        [function notifySquareScreen () {}, 'equal(constant(square))']
+      ]),
 
       units: ['em'],
       percentUnits: ['w%'],
@@ -531,6 +534,7 @@ describe('lib/observer', () => {
       expect(div.removeEventListener).not.toHaveBeenCalled()
       expect(span.removeEventListener).not.toHaveBeenCalled()
       expect(textarea.removeEventListener).toHaveBeenCalledWith('input', inputListener)
+      expect(clearFunctionBehaviourApplyCache).toHaveBeenCalledWith(elements)
     })
 
     it('should not attempt to stop observing if no properties are watched', () => {
@@ -551,9 +555,11 @@ describe('lib/observer', () => {
 
       cleanUp()
 
+      const behaviourCssClasses = [...params.compiledQueries.keys()].filter(key => typeof key === 'string')
+
       elements.forEach(e => {
         expect(e.classList.remove)
-          .toHaveBeenCalledWith(...Object.keys(params.compiledQueries))
+          .toHaveBeenCalledWith(...behaviourCssClasses)
 
         expect(e.style.removeProperty).toHaveBeenCalledTimes(WATCHABLE_PROPERTIES.length)
 
@@ -571,11 +577,11 @@ describe('lib/observer', () => {
       document.createElement('span')
     ]
 
-    const compiledQueries = {
-      classA: '{ width: greaterThan(constant(300)) }',
-      classB: '{ characters: greaterThan(constant(300)) }',
-      classC: '{ children: greaterThan(constant(3)) }'
-    }
+    const compiledQueries = new Map([
+      ['classA', '{ width: greaterThan(constant(300)) }'],
+      ['classB', '{ characters: greaterThan(constant(300)) }'],
+      ['classC', '{ children: greaterThan(constant(3)) }']
+    ])
 
     const units = ['em']
     const percentUnits = ['w%']
@@ -603,11 +609,11 @@ describe('lib/observer', () => {
 
       times(2, () => computeInitialProps.mockImplementationOnce(e => propsByElt.get(e)))
 
-      const { applyStyle } = observeAll(params)
+      const { applyAdaptiveBehaviour } = observeAll(params)
 
       adapt.mockClear()
 
-      applyStyle()
+      applyAdaptiveBehaviour()
 
       expect(adapt).toHaveBeenCalledTimes(elements.length)
       elements.forEach(e => expect(adapt).toHaveBeenCalledWith({
@@ -622,13 +628,13 @@ describe('lib/observer', () => {
     it('should do nothing after cleanUp have been called', () => {
       const {
         unobserve: cleanUp,
-        applyStyle
+        applyAdaptiveBehaviour
       } = observeAll(params)
 
       adapt.mockClear()
 
       cleanUp()
-      applyStyle()
+      applyAdaptiveBehaviour()
 
       expect(adapt).not.toHaveBeenCalled()
     })

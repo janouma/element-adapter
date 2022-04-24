@@ -19,7 +19,8 @@ import {
   areContentEditableCharsWatched,
   areEltChildrenWatched,
   computeInitialProps,
-  adapt
+  adapt,
+  clearFunctionBehaviourApplyCache
 } from './adapters'
 
 const INVALID = {}
@@ -29,9 +30,11 @@ const unobserve = ({
   mutationObserver,
   resizeObserver,
   inputListener,
-  behaviourCssClasses
+  behaviours
 }) => {
   mutationObserver && mutationObserver.disconnect()
+
+  const behaviourCssClasses = behaviours.filter(behaviour => typeof behaviour === 'string')
 
   for (const e of elements) {
     resizeObserver && resizeObserver.unobserve(e)
@@ -109,11 +112,13 @@ const observe = (params) => {
         mutationObserver,
         resizeObserver,
         inputListener,
-        behaviourCssClasses: Object.keys(compiledQueries)
+        behaviours: [...compiledQueries.keys()]
       })
+
+      clearFunctionBehaviourApplyCache(elements)
     },
 
-    applyStyle: () => {
+    applyAdaptiveBehaviour: () => {
       if (!propsCache.get(INVALID)) {
         elements.forEach(elt => adapt({
           elt,

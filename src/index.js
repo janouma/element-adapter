@@ -22,7 +22,7 @@ export default function addAdaptiveBehaviour ({ target, queries = {}, ...options
 
   const {
     unobserve: removeAdaptiveBehaviour,
-    applyStyle: applyAdaptiveBehaviour
+    applyAdaptiveBehaviour
   } = observe({
     elements,
     compiledQueries,
