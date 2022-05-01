@@ -37,10 +37,16 @@ const COMPARISON_PATTERN =
 const EXPRESSION_PATTERN = `${COMPARISON_PATTERN}(\\s+&&\\s+${COMPARISON_PATTERN})*`
 const QUERY_VALIDATOR_PATTERN = new RegExp(`^\\s*${EXPRESSION_PATTERN}(\\s*,\\s*${EXPRESSION_PATTERN})*\\s*$`)
 
+const allowedBehaviourTypes = ['string', 'function']
+
 export const validateQueries = queries => {
-  for (const query of Object.values(queries)) {
+  for (const [query, behaviour] of Object.entries(queries)) {
     if (!query || !query.match(QUERY_VALIDATOR_PATTERN)) {
       throw new Error(`invalid query "${query}"`)
+    }
+
+    if (!allowedBehaviourTypes.includes(typeof behaviour)) {
+      throw new Error(`invalid behaviour "${behaviour}"`)
     }
   }
 }

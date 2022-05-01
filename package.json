@@ -1,6 +1,6 @@
 {
   "name": "element-adapter",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Provides utilities to render dom element adatptive (responsive) to their own properties – dimensions for instance. Can be used with shadow dom",
   "keywords": [
     "responsive",
@@ -57,5 +57,8 @@
     "pre-commit": "^1.2.2",
     "pre-push": "^0.1.1",
     "standard": "^14.3.3"
+  },
+  "volta": {
+    "node": "16.15.0"
   }
 }

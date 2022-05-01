@@ -90,17 +90,33 @@ describe('lib/query_processor', () => {
     jest.isolateModules(() => ({ compileQueryList } = require('../../src/lib/query_processor')))
 
     it('should compile query list', () => {
+      function notifySquareScreen () {}
+
       const compiled = compileQueryList({
-        classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`,
-        classB: 'orientation == landscape && height < 10.325em',
-        classC: 'width > 75%',
-        classD: 'characters > 10 && height <= 13.56%',
-        classE: 'children >= 2 && children < 5',
-        classF: 'characters == 0'
+        [`width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`]:
+          'classA',
+
+        'orientation == landscape && height < 10.325em':
+          'classB',
+
+        'width > 75%':
+          'classC',
+
+        'characters > 10 && height <= 13.56%':
+          'classD',
+
+        'children >= 2 && children < 5':
+          'classE',
+
+        'characters == 0':
+          'classF',
+
+        'orientation == square':
+          notifySquareScreen
       })
 
-      const compiledQueries = {
-        classA: [
+      const compiledQueries = new Map([
+        ['classA', [
           [
             { width: 'greaterThanOrEqual(length(6.25, em))' },
             { height: 'lesserThan(length(50, h%))' }
@@ -108,27 +124,28 @@ describe('lib/query_processor', () => {
 
           [{ 'aspect-ratio': `lesserThanOrEqual(constant(${16 / 9}))` }],
           [{ width: 'greaterThanOrEqual(constant(680))' }]
-        ],
+        ]],
 
-        classB: [[
+        ['classB', [[
           { orientation: 'equal(constant(landscape))' },
           { height: 'lesserThan(length(10.325, em))' }
-        ]],
+        ]]],
 
-        classC: [[{ width: 'greaterThan(length(75, w%))' }]],
+        ['classC', [[{ width: 'greaterThan(length(75, w%))' }]]],
 
-        classD: [[
+        ['classD', [[
           { characters: 'greaterThan(constant(10))' },
           { height: 'lesserThanOrEqual(length(13.56, h%))' }
-        ]],
+        ]]],
 
-        classE: [[
+        ['classE', [[
           { children: 'greaterThanOrEqual(constant(2))' },
           { children: 'lesserThan(constant(5))' }
-        ]],
+        ]]],
 
-        classF: [[{ characters: 'equal(constant(0))' }]]
-      }
+        ['classF', [[{ characters: 'equal(constant(0))' }]]],
+        [notifySquareScreen, [[{ orientation: 'equal(constant(square))' }]]]
+      ])
 
       const units = ['em']
 

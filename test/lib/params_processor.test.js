@@ -102,15 +102,31 @@ describe('lib/params_processor', () => {
   describe('#validateQueries', () => {
     it('should accept valid queries', () => {
       expect(() => validateQueries({
-        classA: `width   >=    6.25em  &&   height  <  50%, aspect-ratio <= ${16 / 9}, width   >= 680px`,
-        classB: '   orientation   ==  landscape  ',
-        classC: '  width > 75%',
-        classD: 'characters  > 10',
-        classE: 'children >=  2 && children < 5  ',
-        classF: 'characters   == 0',
-        classG: 'width >= 75em,height >=  80%',
-        classH: 'orientation == portrait',
-        classI: 'orientation == square'
+        [`width   >=    6.25em  &&   height  <  50%, aspect-ratio <= ${16 / 9}, width   >= 680px`]:
+          'classA',
+
+        '   orientation   ==  landscape  ':
+          'classB',
+
+        '  width > 75%':
+          'classC',
+
+        'characters  > 10':
+          'classD',
+
+        'children >=  2 && children < 5  ':
+          'classE',
+
+        'characters   == 0':
+          'classF',
+
+        'width >= 75em,height >=  80%':
+          'classG',
+
+        'orientation == portrait':
+          'classH',
+
+        'orientation == square' () {}
       })).not.toThrow()
     })
 
@@ -143,9 +159,18 @@ describe('lib/params_processor', () => {
       ${'query having unknown expression separator'}          | ${'width >= 45rem && height < 33% | children <= 2'}
     `('should reject $case', ({ query }) => {
       expect(() => validateQueries({
-        classA: query,
-        classB: 'width > 75%'
+        [query]: 'classA',
+        'width > 75%': 'classB'
       })).toThrow(`invalid query "${query}"`)
+    })
+
+    it('should reject query having invalid behaviour', () => {
+      const wrongBehaviour = ['wrong behaviour']
+
+      expect(() => validateQueries({
+        'orientation == square': wrongBehaviour,
+        'width > 75%': 'classB'
+      })).toThrow(`invalid behaviour "${wrongBehaviour}"`)
     })
   })
 })

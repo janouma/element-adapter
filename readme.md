@@ -30,15 +30,31 @@ adaptive behaviours can be added like this
 ```javascript
 import addAdaptiveBehaviour from 'element-adapter'
 
+function logOrientationChangesToPortrait (element, props) {
+  console.debug(element, 'changed:\n', props)
+}
+
 addAdaptiveBehaviour({
   target: document.querySelectorAll('.component'),
 
   queries: {
-    classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`,
-    classB: 'orientation == landscape',
-    classC: 'width > 75%',
-    classD: 'characters == 0, characters > 10',
-    classE: 'children >= 2 && children < 5'
+    [`width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`]:
+      'classA',
+      
+    'orientation == landscape':
+      'classB',
+      
+    'orientation == portrait':
+      logOrientationChangesToPortrait,
+      
+    'width > 75%':
+      'classC',
+      
+    'characters == 0, characters > 10':
+      'classD',
+      
+    'children >= 2 && children < 5':
+      'classE'
   }
 })
 ```
@@ -46,7 +62,8 @@ Here are some `queries` explained:
 
 **1st query:**
 ```javascript
-// classA: `width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`
+// [`width >= 6.25em && height < 50%, aspect-ratio <= ${16 / 9}, width >= 680px`]:
+//    'classA',
 
 ADD 'classA' WHEN
   (
@@ -61,10 +78,21 @@ ADD 'classA' WHEN
   // the coma acts like OR
   OR width >= 680px
 ```
-  
-**5th query:**
+
+**3rd query:**
 ```javascript
-// classE: 'children >= 2 && children < 5'
+// 'orientation == portrait':
+//   (element, props) => {
+//     console.debug(element, 'changed:\n', props)
+//   },
+
+EXECUTE FUNCTION logOrientationChangesToPortrait WHEN orientation === 'portrait'
+```
+
+**6th query:**
+```javascript
+// 'children >= 2 && children < 5':
+//   'classE'
 
 ADD 'classE' WHEN
   children >= 2
@@ -107,11 +135,21 @@ Can be a single `Element`, a `NodeList` or an array of `Element`s
 ***Required if no watched property is provided.***
 ```javascript
 queries: {
-  cssClassA: <query a>,
-  cssClassB: <query b>,
+  'query a': 'cssClassA',
+  'query b': 'cssClassB',
+  
+  'query c': function onQueryMatch (element, props) {
+    // Do something when 'query c' matches element props
+  },
   ...
 }
 ```
+
+> ### Note
+> Function behaviour parameters:
+> - `element` is a reference to the DOM element which props the query is run against
+> - `props` are the subset of props *({ key: value } pairs)* which the query is run against
+
 #### Formal query syntax
 
 ```css
@@ -194,6 +232,9 @@ updated () {
   this.applyAdaptiveBehaviour()
 }
 ```
+
+> ### Note
+>  Function behaviours – *as opposed to classes behaviours* – don't get re-run when the element state hasn't changed
 
 # Browsers compatibility
 Tested on **Safari**, **Chrome** and **Firefox**

@@ -68,23 +68,39 @@ export const computeInitialProps = (elt, watchedProperties) => {
   return props
 }
 
-const applyStyle = ({ elt, props, queries, unitsMeasurements }) => {
+const functionBehaviourApplyCache = new WeakMap()
+
+const applyAdaptiveBehaviour = ({ elt, props, queries, unitsMeasurements }) => {
   const queryProps = {
     ...props,
     characters: props.characters || 0,
     children: props.children || 0
   }
 
-  for (const [cls, query] of Object.entries(queries)) {
-    elt.classList.toggle(
-      cls,
+  for (const [behaviour, query] of queries.entries()) {
+    const isQueryMatched = runQuery({
+      query,
+      unitsMeasurements,
+      props: queryProps
+    })
 
-      runQuery({
-        query,
-        unitsMeasurements,
-        props: queryProps
-      })
-    )
+    if (typeof behaviour === 'string') {
+      elt.classList.toggle(behaviour, isQueryMatched)
+    } else {
+      const previousMatch = Boolean(functionBehaviourApplyCache.get(elt)?.get(query))
+
+      if (isQueryMatched !== previousMatch) {
+        if (isQueryMatched) {
+          behaviour(elt, queryProps)
+        }
+
+        if (!functionBehaviourApplyCache.get(elt)) {
+          functionBehaviourApplyCache.set(elt, new WeakMap())
+        }
+
+        functionBehaviourApplyCache.get(elt).set(query, isQueryMatched)
+      }
+    }
   }
 
   for (const [prop, value] of Object.entries(props)) {
@@ -96,7 +112,7 @@ const applyStyle = ({ elt, props, queries, unitsMeasurements }) => {
 }
 
 export const adapt = ({ elt, props, queries, units, percentUnits }) => {
-  applyStyle({
+  applyAdaptiveBehaviour({
     elt,
     props,
     queries,
@@ -106,4 +122,10 @@ export const adapt = ({ elt, props, queries, units, percentUnits }) => {
       ...measurePercentUnits(elt, percentUnits)
     }
   })
+}
+
+export function clearFunctionBehaviourApplyCache (elements) {
+  for (const elt of elements) {
+    functionBehaviourApplyCache.delete(elt)
+  }
 }

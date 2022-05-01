@@ -1,10 +1,5 @@
 /* eslint-env jest */
 
-import {
-  computeInitialProps,
-  adapt
-} from '../../src/lib/adapters'
-
 import { runQuery } from '../../src/lib/query_processor'
 import { measureNonPercentUnits, measurePercentUnits } from '../../src/utils/dimensions'
 import { WATCHABLE_PROPERTIES } from '../../src/lib/constants'
@@ -34,11 +29,17 @@ const unitsMeasurements = {
   ...percentUnitsMesurements
 }
 
-const queries = {
-  classA: function widthGreaterThanConstant100 () { return true },
-  classB: function charactersLesserThanConstant10 () { return true },
-  classC: function childrenGreaterThanConstant3 () { return false }
-}
+const notifySquareOrientation = jest.fn().mockName('notifySquareOrientation')
+const notifyPortraitOrientation = jest.fn().mockName('notifyPortraitOrientation')
+const orientationEqualPortrait = jest.fn(() => true).mockName('notifyPortraitOrientation')
+
+const queries = new Map([
+  ['classA', function widthGreaterThanConstant100 () { return true }],
+  ['classB', function charactersLesserThanConstant10 () { return true }],
+  ['classC', function childrenGreaterThanConstant3 () { return false }],
+  [notifySquareOrientation, function orientationEqualSquare () { return true }],
+  [notifyPortraitOrientation, orientationEqualPortrait]
+])
 
 runQuery.mockImplementation(({ query }) => query())
 
@@ -67,18 +68,30 @@ editableSpan.textContent = 'editable content'
 
 const elements = [div, textarea, editableSpan]
 
+let computeInitialProps
+let adapt
+let clearFunctionBehaviourApplyCache
+
 describe('lib/adapters', () => {
+  beforeEach(() => jest.isolateModules(() => ({
+    computeInitialProps,
+    adapt,
+    clearFunctionBehaviourApplyCache
+  } = require('../../src/lib/adapters'))))
+
   afterEach(() => {
     jest.clearAllMocks()
 
+    const behaviourCssClasses = [...queries.keys()].filter(behaviour => typeof behaviour === 'string')
+
     elements.forEach(e => {
-      e.classList.remove(...Object.keys(queries))
+      e.classList.remove(...behaviourCssClasses)
       WATCHABLE_PROPERTIES.forEach(prop => e.style.removeProperty(`--ea-${prop}`))
     })
   })
 
   describe('#adapt', () => {
-    it('should apply behaviour classes according to queries results', () => {
+    it('should apply behaviours according to queries results', () => {
       const props = {
         width: 160,
         characters: 8,
@@ -87,9 +100,13 @@ describe('lib/adapters', () => {
 
       adapt({ elt: div, props, queries, units, percentUnits })
 
-      const compiledQueries = Object.values(queries)
+      orientationEqualPortrait.mockReturnValueOnce(false)
 
-      expect(runQuery).toHaveBeenCalledTimes(compiledQueries.length)
+      adapt({ elt: div, props, queries, units, percentUnits })
+
+      const compiledQueries = [...queries.values()]
+
+      expect(runQuery).toHaveBeenCalledTimes(compiledQueries.length * 2)
 
       compiledQueries.forEach(query => expect(runQuery).toHaveBeenCalledWith({
         query,
@@ -98,6 +115,9 @@ describe('lib/adapters', () => {
       }))
 
       expect(Array.from(div.classList)).toEqual(['classA', 'classB'])
+      expect(notifySquareOrientation).toHaveBeenCalledTimes(1)
+      expect(notifySquareOrientation).toHaveBeenCalledWith(div, props)
+      expect(notifyPortraitOrientation).toHaveBeenCalledTimes(1)
     })
 
     it('should set props css vars', () => {
@@ -126,9 +146,9 @@ describe('lib/adapters', () => {
       const props = { width: 160 }
       const defaults = { characters: 0, children: 0 }
 
-      adapt({ elt: div, props, queries, units, percentUnits })
+      adapt({ elt: div, props, queries, units, percentUnits });
 
-      Object.values(queries).forEach(query => expect(runQuery).toHaveBeenCalledWith({
+      [...queries.values()].forEach(query => expect(runQuery).toHaveBeenCalledWith({
         query,
         unitsMeasurements,
         props: { ...props, ...defaults }
@@ -138,6 +158,28 @@ describe('lib/adapters', () => {
         ([prop, value]) => expect(div.style.setProperty)
           .not.toHaveBeenCalledWith(`--ea-${prop}`, value)
       )
+    })
+  })
+
+  describe('#clearFunctionBehaviourApplyCache', () => {
+    it('should actually clear cache', () => {
+      const props = {
+        width: 160,
+        characters: 8,
+        children: 1
+      }
+
+      const span = document.createElement('span')
+
+      adapt({ elt: div, props, queries, units, percentUnits })
+      adapt({ elt: span, props, queries, units, percentUnits })
+
+      clearFunctionBehaviourApplyCache([div])
+
+      adapt({ elt: div, props, queries, units, percentUnits })
+      adapt({ elt: span, props, queries, units, percentUnits })
+
+      expect(notifySquareOrientation).toHaveBeenCalledTimes(3)
     })
   })
 
